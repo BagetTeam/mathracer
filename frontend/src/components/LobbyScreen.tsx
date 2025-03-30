@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  ActionDispatch,
+  useLayoutEffect,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
 import { toast } from "@/lib/toast";
 import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
+import * as signalR from "@microsoft/signalr";
+import { GameOpsAction } from "@/app/page";
 
 interface LobbyScreenProps {
   gameId: string;
@@ -14,6 +22,8 @@ interface LobbyScreenProps {
   selectedMode: GameMode;
   onStartGame: () => void;
   onBackToMenu: () => void;
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
+  isJoining: boolean;
 }
 
 const LobbyScreen: React.FC<LobbyScreenProps> = ({
@@ -23,6 +33,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
   selectedMode,
   onStartGame,
   onBackToMenu,
+  dispatch,
+  isJoining,
 }) => {
   const [gameUrl, setGameUrl] = useState("");
 
@@ -62,6 +74,27 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
       return `Solve the most equations in ${selectedMode.seconds} seconds`;
     }
   };
+
+  const connection = useMemo(
+    () =>
+      new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5103/hub")
+        .build(),
+    [],
+  );
+
+  useLayoutEffect(() => {
+    connection.on("CreateGame", () => {});
+    connection.start();
+
+    return () => {
+      connection.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    connection.send("JoinLobby", gameId);
+  }, []);
 
   return (
     <div className="animate-fade-in mx-auto flex max-w-2xl flex-col items-center space-y-6">
