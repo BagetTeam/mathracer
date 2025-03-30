@@ -1,4 +1,12 @@
 import Image from "next/image";
+import React, { useState, useEffect } from "react";
+import MainMenu from "@/components/MainMenu";
+import LobbyScreen from "@/components/LobbyScreen";
+import GameScreen from "@/components/GameScreen";
+import JoinGameScreen from "@/components/JoinGameScreen";
+import ResultsScreen from "@/components/ResultsScreen";
+import { Player, GameMode, GameState, Equation } from "@/types/game";
+import { generateEquations, generateGameCode } from "@/utils/equations";
 
 export default function Home() {
   return (
