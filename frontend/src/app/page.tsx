@@ -7,18 +7,24 @@ import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
 import { useReducer, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function Page() {
+  const urlSearchParams = useSearchParams();
+  const isJoining = urlSearchParams.get("join") !== null;
+  const gameId = urlSearchParams.get("join") ?? crypto.randomUUID().toString();
+
   const currentPlayer: Player = {
-    id: "1",
+    id: crypto.randomUUID().toString(),
     name: "Guest",
     score: 0,
     isHost: false,
     progress: 0,
   };
 
-  const [screen, setScreen] = useState<GameState>("menu");
+  const [screen, setScreen] = useState<GameState>(isJoining ? "lobby" : "menu");
   const [gameOps, dispatch] = useReducer(gameOpsreducer, {
+    gameId: gameId,
     currentPlayer,
     players: [currentPlayer],
     gameMode: { type: "time", seconds: 10 },
@@ -60,7 +66,7 @@ export default function Page() {
                 }}
                 onStartGame={() => setScreen("playing")}
                 players={gameOps.players}
-                gameId="asdf"
+                gameId={gameId}
                 isHost={gameOps.currentPlayer.isHost}
                 selectedMode={gameOps.gameMode}
               />
@@ -92,6 +98,7 @@ type GameOps = {
   currentPlayer: Player;
   players: Player[];
   gameMode: GameMode;
+  gameId: string;
 };
 
 type GameOpsAction =
@@ -125,6 +132,12 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "createGame":
       return {
         ...state,
+        players: state.players.map((p) => {
+          return {
+            ...p,
+            isHost: p.id === state.currentPlayer.id,
+          };
+        }),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: true,
@@ -133,6 +146,12 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
+        players: state.players.map((p) => {
+          return {
+            ...p,
+            isHost: false,
+          };
+        }),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,

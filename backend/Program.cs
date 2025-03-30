@@ -8,3 +8,5 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapHub<RacerHub>("/hub");
+
+app.Run();
