@@ -119,7 +119,7 @@
 }
 
 .math-button-primary {
-  @apply math-button bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply math-button bg-primary/70 text-primary-foreground hover:bg-primary/90;
 }
 
 .math-button-secondary {
