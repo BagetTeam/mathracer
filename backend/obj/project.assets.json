@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/vincentliu/dev/typeracer/typeracer.csproj",
+      "projectUniqueName": "/Users/vincentliu/dev/mathracer/backend/typeracer.csproj",
       "projectName": "typeracer",
-      "projectPath": "/Users/vincentliu/dev/typeracer/typeracer.csproj",
+      "projectPath": "/Users/vincentliu/dev/mathracer/backend/typeracer.csproj",
       "packagesPath": "/Users/vincentliu/.nuget/packages/",
-      "outputPath": "/Users/vincentliu/dev/typeracer/obj/",
+      "outputPath": "/Users/vincentliu/dev/mathracer/backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/vincentliu/.nuget/NuGet/NuGet.Config"
