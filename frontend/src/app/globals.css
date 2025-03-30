@@ -114,21 +114,21 @@
   --chart-5: oklch(0.645 0.246 16.439);
 }
 
-@layer components {
-  .math-button {
-    @apply focus:ring-primary/50 rounded-lg border border-gray-200 bg-white px-6 py-3 font-medium shadow-sm transition-all duration-200 hover:shadow-md focus:ring-2 focus:outline-none;
-  }
+@utility math-button {
+  @apply focus:ring-primary/50 rounded-lg border border-gray-200 bg-white px-6 py-3 font-medium shadow-sm transition-all duration-200 hover:shadow-md focus:ring-2 focus:outline-none;
+}
 
+@layer components {
   .math-button-primary {
-    @apply focus:ring-primary/50 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg border border-gray-200 px-6 py-3 font-medium shadow-sm transition-all duration-200 hover:shadow-md focus:ring-2 focus:outline-none;
+    @apply math-button bg-primary text-primary-foreground hover:bg-primary/90;
   }
 
   .math-button-secondary {
-    @apply focus:ring-primary/50 bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-lg border border-gray-200 px-6 py-3 font-medium shadow-sm transition-all duration-200 hover:shadow-md focus:ring-2 focus:outline-none;
+    @apply math-button bg-secondary text-secondary-foreground hover:bg-secondary/90;
   }
 
   .math-button-accent {
-    @apply focus:ring-primary/50 bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg border border-gray-200 px-6 py-3 font-medium shadow-sm transition-all duration-200 hover:shadow-md focus:ring-2 focus:outline-none;
+    @apply math-button bg-accent text-accent-foreground hover:bg-accent/90;
   }
 
   .equation-card {
