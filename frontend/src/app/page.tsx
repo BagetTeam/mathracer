@@ -11,6 +11,16 @@ import { useSearchParams } from "next/navigation";
 import * as signalR from "@microsoft/signalr";
 
 export default function Page() {
+  useEffect(() => {
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5103/hub")
+      .build();
+    connection.start();
+
+    connection.on("messageReceived", (username: string, message: string) => {
+      console.log(username, message);
+    });
+  }, []);
   const urlSearchParams = useSearchParams();
   const isJoining = urlSearchParams.get("join") !== null;
   const gameId = urlSearchParams.get("join") ?? crypto.randomUUID().toString();

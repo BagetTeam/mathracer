@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
-import { toast } from "@/lib/toast";
+//import { toast } from "@/lib/toast";
 import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
 
@@ -34,7 +34,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(gameUrl);
-    toast.success("Invite link copied to clipboard");
+    //toast.success("Invite link copied to clipboard");
   };
 
   const shareInviteLink = async () => {

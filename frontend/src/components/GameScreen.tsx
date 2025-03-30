@@ -94,7 +94,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                 : `${gameMode.seconds}s Challenge`}
             </div>
           </div>
-          <Progress value={calculateProgress()} className="h-2" />
+          {/* <Progress value={calculateProgress()} className="h-2" /> */}
         </div>
 
         <div className="mb-8 flex flex-grow flex-col items-center justify-center">
