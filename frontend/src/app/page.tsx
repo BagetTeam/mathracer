@@ -1,111 +1,142 @@
-import Image from "next/image";
-import React, { useState, useEffect } from "react";
-import MainMenu from "@/components/MainMenu";
-import LobbyScreen from "@/components/LobbyScreen";
+"use client";
+
 import GameScreen from "@/components/GameScreen";
 import JoinGameScreen from "@/components/JoinGameScreen";
+import LobbyScreen from "@/components/LobbyScreen";
+import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
-import { Player, GameMode, GameState, Equation } from "@/types/game";
-import { generateEquations, generateGameCode } from "@/utils/equations";
+import { GameMode, GameState, Player } from "@/types/game";
+import { useReducer, useState } from "react";
 
-export default function Home() {
+export default function Page() {
+  const currentPlayer: Player = {
+    id: "1",
+    name: "Guest",
+    score: 0,
+    isHost: false,
+    progress: 0,
+  };
+
+  const [screen, setScreen] = useState<GameState>("menu");
+  const [gameOps, dispatch] = useReducer(gameOpsreducer, {
+    currentPlayer,
+    players: [currentPlayer],
+    gameMode: { type: "time", seconds: 10 },
+  });
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <main className="flex h-full w-full items-center justify-center">
+      {(() => {
+        switch (screen) {
+          case "menu":
+            return (
+              <MainMenu
+                onSelectMode={(gameMode) =>
+                  dispatch({ type: "setGameMode", gameMode })
+                }
+                onJoinGame={() => setScreen("joining")}
+                onCreateGame={() => {
+                  dispatch({ type: "createGame" });
+                  setScreen("lobby");
+                }}
+                onStartSinglePlayer={() => {
+                  setScreen("playing");
+                }}
+              />
+            );
+          case "joining":
+            return (
+              <JoinGameScreen
+                onJoinGame={() => {}}
+                onBackToMenu={() => setScreen("menu")}
+              />
+            );
+          case "lobby":
+            return (
+              <LobbyScreen
+                onBackToMenu={() => {
+                  dispatch({ type: "exitLobby" });
+                  setScreen("menu");
+                }}
+                onStartGame={() => setScreen("playing")}
+                players={gameOps.players}
+                gameId="asdf"
+                isHost={gameOps.currentPlayer.isHost}
+                selectedMode={gameOps.gameMode}
+              />
+            );
+          case "playing":
+            return (
+              <GameScreen
+                {...gameOps}
+                onGameEnd={() => setScreen("results")}
+                equations={[]}
+              />
+            );
+          case "results":
+            return (
+              <ResultsScreen
+                players={gameOps.players}
+                gameMode={gameOps.gameMode}
+                onBackToMenu={() => setScreen("menu")}
+                onPlayAgain={() => setScreen("playing")}
+              />
+            );
+        }
+      })()}
+    </main>
   );
+}
+
+type GameOps = {
+  currentPlayer: Player;
+  players: Player[];
+  gameMode: GameMode;
+};
+
+type GameOpsAction =
+  | {
+      type: "addPlayer";
+      player: Player;
+    }
+  | {
+      type: "setGameMode";
+      gameMode: GameMode;
+    }
+  | {
+      type: "createGame";
+    }
+  | {
+      type: "exitLobby";
+    };
+
+function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
+  switch (action.type) {
+    case "addPlayer":
+      return {
+        ...state,
+        players: [...state.players, action.player],
+      };
+    case "setGameMode":
+      return {
+        ...state,
+        gameMode: action.gameMode,
+      };
+    case "createGame":
+      return {
+        ...state,
+        currentPlayer: {
+          ...state.currentPlayer,
+          isHost: true,
+        },
+      };
+    case "exitLobby":
+      return {
+        ...state,
+        currentPlayer: {
+          ...state.currentPlayer,
+          isHost: false,
+        },
+      };
+  }
 }
