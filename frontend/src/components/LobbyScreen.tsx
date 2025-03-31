@@ -118,9 +118,12 @@ function Lobby({
     connection.on("AddUnloadEvenListener", (player: string) => {
       const p: Player = JSON.parse(player);
 
-      window.addEventListener("beforeunload", async () => {
+      const f = async () => {
         await connection.send("RemovePlayer", gameId, p.id);
-      });
+        window.removeEventListener("beforeunload", f);
+      };
+
+      window.addEventListener("beforeunload", f);
 
       dispatch({
         type: "setCurrentPlayer",
