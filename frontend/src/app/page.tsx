@@ -127,10 +127,19 @@ export type GameOpsAction =
   | {
       type: "setPlayers";
       players: Player[];
+    }
+  | {
+      type: "setCurrentPlayer";
+      player: Player;
     };
 
 function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
   switch (action.type) {
+    case "setCurrentPlayer":
+      return {
+        ...state,
+        currentPlayer: action.player,
+      };
     case "addPlayer":
       return {
         ...state,

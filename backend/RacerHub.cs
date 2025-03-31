@@ -8,6 +8,13 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
+    public async void syncPlayers(string gameId)
+    {
+        Dictionary<int, Player> lobby = lobbies[gameId];
+        string json = JsonSerializer.Serialize(lobby.Values);
+        await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
+    }
+
     public async Task JoinLobby(string gameId, string name)
     {
         Player currentPlayer = new Player(name);
@@ -22,14 +29,37 @@ public class RacerHub : Hub
 
         currentPlayer.id = lobby.Count + 1;
 
+        while (lobby.ContainsKey(currentPlayer.id))
+        {
+            currentPlayer.id = lobby.Count + 1;
+        }
+
         lobby.Add(currentPlayer.id, currentPlayer);
 
-        string json = JsonSerializer.Serialize(lobby.Values);
-        await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Groups(gameId).SendAsync("NewPlayer", json);
+        await Clients
+            .Client(Context.ConnectionId)
+            .SendAsync("AddUnloadEvenListener", JsonSerializer.Serialize(currentPlayer));
 
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobby.Values));
+        await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
+        syncPlayers(gameId);
+    }
+
+    public void RemovePlayer(string gameId, int id)
+    {
+        System.Console.WriteLine(id);
+
+        var lobby = lobbies[gameId];
+        Player p = lobby[id];
+        lobby.Remove(id);
+        if (lobby.Count == 0)
+        {
+            lobbies.Remove(gameId);
+        }
+
+        // TODO: change host if host leaves
+        // if (p.isHost) {}
+
+        syncPlayers(gameId);
     }
 }
 

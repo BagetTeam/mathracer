@@ -108,16 +108,31 @@ function Lobby({
       .withUrl("http://localhost:5103/hub")
       .build();
 
-    connection.on("NewPlayer", (players: string) => {
+    connection.on("SyncPlayers", (players: string) => {
       dispatch({
         type: "setPlayers",
         players: JSON.parse(players),
       });
     });
 
+    connection.on("AddUnloadEvenListener", (player: string) => {
+      const p: Player = JSON.parse(player);
+
+      window.addEventListener("beforeunload", async () => {
+        await connection.send("RemovePlayer", gameId, p.id);
+      });
+
+      dispatch({
+        type: "setCurrentPlayer",
+        player: p,
+      });
+    });
+
     connection
       .start()
-      .then(() => connection.send("JoinLobby", gameId, currentPlayer.name))
+      .then(() => {
+        return connection.send("JoinLobby", gameId, currentPlayer.name);
+      })
       .catch();
 
     return () => {
