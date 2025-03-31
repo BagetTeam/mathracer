@@ -44,7 +44,7 @@ public class RacerHub : Hub
         syncPlayers(gameId);
     }
 
-    public void RemovePlayer(string gameId, int id)
+    public async void RemovePlayer(string gameId, int id)
     {
         if (!lobbies.ContainsKey(gameId))
         {
@@ -58,6 +58,8 @@ public class RacerHub : Hub
         {
             lobbies.Remove(gameId);
         }
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
 
         // TODO: change host if host leaves
         // if (p.isHost) {}
