@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Timers;
 using equation;
@@ -12,7 +11,7 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
-    private static ConcurrentDictionary<string, System.Timers.Timer> timers = new();
+    private static Dictionary<string, System.Timers.Timer> timers = new();
 
     private static Dictionary<string, Game> games = new Dictionary<string, Game>();
 
@@ -92,21 +91,30 @@ public class RacerHub : Hub
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
         Equation[] equations = Equation.GenerateAllEquations(selectedMode.count);
 
-        await Clients.Groups(gameId).SendAsync("GameStart", JsonSerializer.Serialize(equations));
+        await Clients
+            .Groups(gameId)
+            .SendAsync("StartCountdown", JsonSerializer.Serialize(equations));
 
-        System.Timers.Timer timer = new System.Timers.Timer(1000);
-        System.Console.WriteLine("GameStart");
+        System.Console.WriteLine("Start Countdown");
 
-        int counter = 3;
-
-        timer.Elapsed += async (Object source, ElapsedEventArgs e) =>
+        int count = 3;
+        DateTime now = DateTime.Now;
+        int elapsed = 0;
+        while (count >= 0)
         {
-            await Clients.Groups(gameId).SendAsync("CountDown", counter);
-            System.Console.WriteLine("Seconds pased {0}", counter);
-            counter--;
-        };
-        timer.AutoReset = true;
-        timer.Start();
+            if (elapsed >= 1)
+            {
+                await Clients.Groups(gameId).SendAsync("CountDown", count);
+                System.Console.WriteLine("Seconds pased {0}", count);
+                elapsed = 0;
+                now = DateTime.Now;
+                count--;
+            }
+
+            elapsed = (DateTime.Now - now).Seconds;
+        }
+
+        System.Console.WriteLine("Game started!!");
+        await Clients.Groups(gameId).SendAsync("GameStart");
     }
 }
-
