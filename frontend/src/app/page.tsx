@@ -6,9 +6,9 @@ import LobbyScreen from "@/components/LobbyScreen";
 import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
-import { useEffect, useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import signalR from "@microsoft/signalr";
+import * as signalR from "@microsoft/signalr";
 
 export default function Page() {
   // useEffect(() => {
@@ -23,7 +23,10 @@ export default function Page() {
   // }, []);
   const urlSearchParams = useSearchParams();
   const isJoining = urlSearchParams.get("join") !== null;
-  const gameId = urlSearchParams.get("join") ?? crypto.randomUUID().toString();
+  const gameId = useMemo(
+    () => urlSearchParams.get("join") ?? crypto.randomUUID().toString(),
+    [],
+  );
 
   const currentPlayer: Player = {
     id: 1,
@@ -37,7 +40,7 @@ export default function Page() {
   const [gameOps, dispatch] = useReducer(gameOpsreducer, {
     gameId: gameId,
     currentPlayer,
-    players: [currentPlayer],
+    players: [],
     gameMode: { type: "time", seconds: 10 },
   });
 
@@ -71,16 +74,31 @@ export default function Page() {
           case "lobby":
             return (
               <LobbyScreen
-                isJoining={isJoining}
                 dispatch={dispatch}
                 onBackToMenu={() => {
                   dispatch({ type: "exitLobby" });
                   setScreen("menu");
+
+                  const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("http://localhost:5103/hub")
+                    .build();
+
+                  connection
+                    .start()
+                    .then(() =>
+                      connection.send(
+                        "RemovePlayer",
+                        gameId,
+                        gameOps.currentPlayer.id,
+                      ),
+                    )
+                    .then(() => connection.stop())
+                    .catch();
                 }}
                 onStartGame={() => setScreen("playing")}
                 players={gameOps.players}
                 gameId={gameId}
-                isHost={gameOps.currentPlayer.isHost}
+                currentPlayer={gameOps.currentPlayer}
                 selectedMode={gameOps.gameMode}
               />
             );
@@ -128,14 +146,36 @@ export type GameOpsAction =
     }
   | {
       type: "exitLobby";
+    }
+  | {
+      type: "nameChange";
+      name: string;
+    }
+  | {
+      type: "setPlayers";
+      players: Player[];
+    }
+  | {
+      type: "setCurrentPlayer";
+      player: Player;
     };
 
 function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
   switch (action.type) {
+    case "setCurrentPlayer":
+      return {
+        ...state,
+        currentPlayer: action.player,
+      };
     case "addPlayer":
       return {
         ...state,
         players: [...state.players, action.player],
+      };
+    case "setPlayers":
+      return {
+        ...state,
+        players: action.players,
       };
     case "setGameMode":
       return {
@@ -145,12 +185,6 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "createGame":
       return {
         ...state,
-        players: state.players.map((p) => {
-          return {
-            ...p,
-            isHost: p.id === state.currentPlayer.id,
-          };
-        }),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: true,
@@ -169,6 +203,23 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
           ...state.currentPlayer,
           isHost: false,
         },
+      };
+
+    case "nameChange":
+      return {
+        ...state,
+        currentPlayer: {
+          ...state.currentPlayer,
+          name: action.name,
+        },
+        players: state.players.map((p) =>
+          p.id === state.currentPlayer.id
+            ? {
+                ...state.currentPlayer,
+                name: action.name,
+              }
+            : p,
+        ),
       };
   }
 }

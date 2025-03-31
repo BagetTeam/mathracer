@@ -1,65 +1,85 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 
 namespace hub;
 
 public class RacerHub : Hub
 {
-    private static Dictionary<string, Lobby> lobbies = new Dictionary<string, Lobby>();
+    private static Dictionary<string, Dictionary<int, Player>> lobbies =
+        new Dictionary<string, Dictionary<int, Player>>();
 
-    public async Task JoinLobby(string gameId)
-    {   
-        Player currentPlayer = new Player();
-        Lobby lobby = new Lobby(gameId, new Dictionary<int, Player>());
+    public async void syncPlayers(string gameId)
+    {
+        Dictionary<int, Player> lobby = lobbies[gameId];
+        string json = JsonSerializer.Serialize(lobby.Values);
+        await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
+    }
+
+    public async Task JoinLobby(string gameId, string name)
+    {
+        Player currentPlayer = new Player(name);
 
         if (!lobbies.ContainsKey(gameId))
         {
-            lobbies.Add(gameId, lobby);
+            lobbies.Add(gameId, new Dictionary<int, Player>());
             currentPlayer.isHost = true;
         }
-        else {
-            lobby = lobbies[gameId];
+
+        Dictionary<int, Player> lobby = lobbies[gameId];
+
+        currentPlayer.id = lobby.Count + 1;
+
+        while (lobby.ContainsKey(currentPlayer.id))
+        {
+            currentPlayer.id = lobby.Count + 1;
         }
-        currentPlayer.id = lobby.players.Count + 1;
 
-        lobby.players.Add(currentPlayer.id, currentPlayer);
-        // lobbies[gameId].Append<Player>(currentPlayer);
+        lobby.Add(currentPlayer.id, currentPlayer);
 
-        await Clients.Client(Context.ConnectionId).SendAsync("NewPlayer", currentPlayer);
+        await Clients
+            .Client(Context.ConnectionId)
+            .SendAsync("AddUnloadEvenListener", JsonSerializer.Serialize(currentPlayer));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {1} joined");
-
-        System.Console.WriteLine("hello world");
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobby.players.Keys));
+        syncPlayers(gameId);
     }
 
-    public async Task removePlayerOrLobby(string gameId, Player player) {
-        Lobby lobby = lobbies[gameId];
-        if (lobby.players.Count == 0) {
-            lobbies.Remove(gameId);
+    public void RemovePlayer(string gameId, int id)
+    {
+        if (!lobbies.ContainsKey(gameId))
+        {
             return;
         }
-        lobby.players.Remove(player.id);
+
+        var lobby = lobbies[gameId];
+        Player p = lobby[id];
+        lobby.Remove(id);
+        if (lobby.Count == 0)
+        {
+            lobbies.Remove(gameId);
+        }
+
+        // TODO: change host if host leaves
+        // if (p.isHost) {}
+
+        syncPlayers(gameId);
     }
 }
 
 public class Player
 {
-    public int id = 0;
-    public int progress = 0;
-    public int score = 0;
-    public bool isHost = false;
-    public string name = "";
-}
+    public int id { get; set; }
+    public int progress { get; set; }
+    public int score { get; set; }
+    public bool isHost { get; set; }
+    public string name { get; set; }
 
-public class Lobby {
-    public string gameId = "";
-    public Dictionary<int, Player> players = new Dictionary<int, Player>();
-
-    public Lobby(string gameId, Dictionary<int, Player> players)
+    public Player(string name)
     {
-        this.gameId = gameId;
-        this.players = players;
+        id = 0;
+        progress = 0;
+        score = 0;
+        isHost = false;
+        this.name = name;
     }
 }

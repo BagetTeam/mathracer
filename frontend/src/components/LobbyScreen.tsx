@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  ActionDispatch,
-  useLayoutEffect,
-} from "react";
+import React, { useEffect, ActionDispatch, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
 //import { toast } from "@/lib/toast";
@@ -15,34 +9,136 @@ import { Player, GameMode } from "@/types/game";
 import * as signalR from "@microsoft/signalr";
 import { GameOpsAction } from "@/app/page";
 
-interface LobbyScreenProps {
-  gameId: string;
-  players: Player[];
-  isHost: boolean;
-  selectedMode: GameMode;
-  onStartGame: () => void;
-  onBackToMenu: () => void;
-  dispatch: ActionDispatch<[action: GameOpsAction]>;
-  isJoining: boolean;
-}
+type LobbyScreenProps = LobbyProps;
 
-const LobbyScreen: React.FC<LobbyScreenProps> = ({
+function LobbyScreen({
   gameId,
   players,
-  isHost,
+  currentPlayer,
   selectedMode,
   onStartGame,
   onBackToMenu,
   dispatch,
-  isJoining,
-}) => {
-  const [gameUrl, setGameUrl] = useState("");
+}: LobbyScreenProps) {
+  const [showNameDialogue, setShowNameDialogue] = useState(true);
+
+  console.log({ currentPlayer });
+
+  return (
+    <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
+      {showNameDialogue ? (
+        <SetName
+          dispatch={dispatch}
+          setShowNameDialogue={setShowNameDialogue}
+        />
+      ) : (
+        <Lobby
+          gameId={gameId}
+          players={players}
+          currentPlayer={currentPlayer}
+          selectedMode={selectedMode}
+          onStartGame={onStartGame}
+          onBackToMenu={onBackToMenu}
+          dispatch={dispatch}
+        />
+      )}
+    </div>
+  );
+}
+
+type SetNameProps = {
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
+  setShowNameDialogue: React.Dispatch<React.SetStateAction<boolean>>;
+};
+function SetName({ dispatch, setShowNameDialogue }: SetNameProps) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center">
+      <p>Join as...</p>
+      <form
+        className="w-60"
+        action={(formdata) => {
+          dispatch({
+            type: "nameChange",
+            name: formdata.get("name")?.toString() ?? "Guest",
+          });
+          setShowNameDialogue(false);
+        }}
+      >
+        <label htmlFor="name" />
+        <input
+          className="w-full p-2 outline-none placeholder:italic"
+          placeholder="name..."
+          id="name"
+          name="name"
+          type="text"
+        />
+        <div className="bg-secondary h-0.5 w-full rounded-full" />
+        <Button className="mt-2 w-full" type="submit">
+          Ok
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+type LobbyProps = {
+  gameId: string;
+  players: Player[];
+  currentPlayer: Player;
+  selectedMode: GameMode;
+  onStartGame: () => void;
+  onBackToMenu: () => void;
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
+};
+function Lobby({
+  gameId,
+  players,
+  selectedMode,
+  onBackToMenu,
+  currentPlayer,
+  onStartGame,
+  dispatch,
+}: LobbyProps) {
+  const gameUrl = `http://localhost:3000?join=${gameId}`;
+
+  console.log({ currentPlayer });
 
   useEffect(() => {
-    // Generate the join URL
-    const url = `${window.location.origin}?join=${gameId}`;
-    setGameUrl(url);
-  }, [gameId]);
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5103/hub")
+      .build();
+
+    connection.on("SyncPlayers", (players: string) => {
+      dispatch({
+        type: "setPlayers",
+        players: JSON.parse(players),
+      });
+    });
+
+    connection.on("AddUnloadEvenListener", (player: string) => {
+      const p: Player = JSON.parse(player);
+
+      window.addEventListener("beforeunload", async () => {
+        await connection.send("RemovePlayer", gameId, p.id);
+      });
+
+      dispatch({
+        type: "setCurrentPlayer",
+        player: p,
+      });
+    });
+
+    connection
+      .start()
+      .then(() => {
+        connection.send("JoinLobby", gameId, currentPlayer.name);
+      })
+      .catch();
+
+    return () => {
+      connection.stop();
+    };
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -89,29 +185,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     }
   };
 
-  const connection = useMemo(
-    () =>
-      new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5103/hub")
-        .build(),
-    [],
-  );
-
-  useLayoutEffect(() => {
-    connection.on("CreateGame", () => {});
-    connection.start();
-
-    return () => {
-      connection.stop();
-    };
-  }, []);
-
-  useEffect(() => {
-    connection.send("JoinLobby", gameId);
-  }, []);
-
   return (
-    <div className="animate-fade-in mx-auto flex max-w-2xl flex-col items-center space-y-6">
+    <>
       <div className="w-full">
         <Button
           variant="ghost"
@@ -163,7 +238,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
       <div className="w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Players ({players.length})</h2>
-          {isHost && players.length > 1 && (
+          {currentPlayer.isHost && players.length > 1 && (
             <Button
               onClick={onStartGame}
               className="math-button-primary flex items-center gap-2"
@@ -174,7 +249,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
           )}
         </div>
 
-        <PlayerList players={players} />
+        <PlayerList players={players} currentPlayerId={currentPlayer.id} />
 
         {players.length < 2 && (
           <p className="text-muted-foreground mt-4 text-center text-sm">
@@ -182,8 +257,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
           </p>
         )}
       </div>
-    </div>
+    </>
   );
-};
+}
 
 export default LobbyScreen;
