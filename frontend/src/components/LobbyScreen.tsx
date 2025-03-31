@@ -36,13 +36,30 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
   dispatch,
   isJoining,
 }) => {
-  const [gameUrl, setGameUrl] = useState("");
+  //const [gameUrl, setGameUrl] = useState("");
+  const gameUrl = `http://localhost:3000?join=${gameId}`;
 
   useEffect(() => {
     // Generate the join URL
-    const url = `${window.location.origin}?join=${gameId}`;
-    setGameUrl(url);
-  }, [gameId]);
+    //const url = `${window.location.origin}?join=${gameId}`;
+    //setGameUrl(url);
+
+    async function init() {
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5103/hub")
+        .build();
+
+      connection.on("NewPlayer", (player: Player) => {
+        dispatch({ type: "addPlayer", player });
+      });
+
+      await connection.start();
+
+      await connection.send("JoinLobby", gameId);
+    }
+
+    init();
+  }, []);
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(gameUrl);
@@ -74,27 +91,6 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
       return `Solve the most equations in ${selectedMode.seconds} seconds`;
     }
   };
-
-  const connection = useMemo(
-    () =>
-      new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5103/hub")
-        .build(),
-    [],
-  );
-
-  useLayoutEffect(() => {
-    connection.on("CreateGame", () => {});
-    connection.start();
-
-    return () => {
-      connection.stop();
-    };
-  }, []);
-
-  useEffect(() => {
-    connection.send("JoinLobby", gameId);
-  }, []);
 
   return (
     <div className="animate-fade-in mx-auto flex max-w-2xl flex-col items-center space-y-6">

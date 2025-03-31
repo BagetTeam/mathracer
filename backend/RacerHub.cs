@@ -4,30 +4,37 @@ namespace hub;
 
 public class RacerHub : Hub
 {
-    Dictionary<string, Player[]> lobbies = new Dictionary<string, Player[]>();
+    private static Dictionary<string, Dictionary<int, Player>> lobbies =
+        new Dictionary<string, Dictionary<int, Player>>();
 
     public async Task JoinLobby(string gameId)
     {
+        // System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
         Player currentPlayer = new Player();
 
         if (!lobbies.ContainsKey(gameId))
         {
-            lobbies.Add(gameId, []);
+            lobbies.Add(gameId, new Dictionary<int, Player>());
             currentPlayer.isHost = true;
         }
 
-        lobbies[gameId].Append<Player>(currentPlayer);
+        Dictionary<int, Player> lobby = lobbies[gameId];
+
+        currentPlayer.id = lobby.Count + 1;
+
+        lobby.Add(currentPlayer.id, currentPlayer);
 
         await Clients.Client(Context.ConnectionId).SendAsync("NewPlayer", currentPlayer);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {1} joined");
+        await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {currentPlayer.id} joined");
 
-        System.Console.WriteLine("hello world");
+        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
+        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies[gameId].Keys));
     }
 }
 
-class Player
+public class Player
 {
     public int id = 0;
     public int progress = 0;
