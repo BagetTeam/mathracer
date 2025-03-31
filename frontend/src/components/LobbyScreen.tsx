@@ -9,20 +9,12 @@ import { Player, GameMode } from "@/types/game";
 import * as signalR from "@microsoft/signalr";
 import { GameOpsAction } from "@/app/page";
 
-interface LobbyScreenProps {
-  gameId: string;
-  players: Player[];
-  curentPlayer: Player;
-  selectedMode: GameMode;
-  onStartGame: () => void;
-  onBackToMenu: () => void;
-  dispatch: ActionDispatch<[action: GameOpsAction]>;
-}
+type LobbyScreenProps = LobbyProps;
 
 function LobbyScreen({
   gameId,
   players,
-  curentPlayer: currentPlayer,
+  currentPlayer,
   selectedMode,
   onStartGame,
   onBackToMenu,
@@ -30,30 +22,103 @@ function LobbyScreen({
 }: LobbyScreenProps) {
   const [showNameDialogue, setShowNameDialogue] = useState(true);
 
+  // console.log({ gameId });
+  console.log({ currentPlayer });
+
+  return (
+    <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
+      {showNameDialogue ? (
+        <SetName
+          dispatch={dispatch}
+          setShowNameDialogue={setShowNameDialogue}
+        />
+      ) : (
+        <Lobby
+          gameId={gameId}
+          players={players}
+          currentPlayer={currentPlayer}
+          selectedMode={selectedMode}
+          onStartGame={onStartGame}
+          onBackToMenu={onBackToMenu}
+          dispatch={dispatch}
+        />
+      )}
+    </div>
+  );
+}
+
+type SetNameProps = {
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
+  setShowNameDialogue: React.Dispatch<React.SetStateAction<boolean>>;
+};
+function SetName({ dispatch, setShowNameDialogue }: SetNameProps) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center">
+      <p>Join as...</p>
+      <form
+        className="w-60"
+        action={(formdata) => {
+          dispatch({
+            type: "nameChange",
+            name: formdata.get("name")?.toString() ?? "Guest",
+          });
+          setShowNameDialogue(false);
+        }}
+      >
+        <label htmlFor="name" />
+        <input
+          className="w-full p-2 outline-none placeholder:italic"
+          placeholder="name..."
+          id="name"
+          name="name"
+          type="text"
+        />
+        <div className="bg-secondary h-0.5 w-full rounded-full" />
+        <Button className="mt-2 w-full" type="submit">
+          Ok
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+type LobbyProps = {
+  gameId: string;
+  players: Player[];
+  currentPlayer: Player;
+  selectedMode: GameMode;
+  onStartGame: () => void;
+  onBackToMenu: () => void;
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
+};
+function Lobby({
+  gameId,
+  players,
+  selectedMode,
+  onBackToMenu,
+  currentPlayer,
+  onStartGame,
+  dispatch,
+}: LobbyProps) {
   const gameUrl = `http://localhost:3000?join=${gameId}`;
+
+  console.log({ currentPlayer });
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl("http://localhost:5103/hub")
       .build();
 
-    connection.on("NewPlayer", (id: number) => {
-      console.log({ id });
+    connection.on("NewPlayer", (players: string) => {
       dispatch({
-        type: "addPlayer",
-        player: {
-          id,
-          isHost: currentPlayer.isHost,
-          progress: 0,
-          score: 0,
-          name: "Guest",
-        },
+        type: "setPlayers",
+        players: JSON.parse(players),
       });
     });
 
     connection
       .start()
-      .then(() => connection.send("JoinLobby", gameId))
+      .then(() => connection.send("JoinLobby", gameId, currentPlayer.name))
       .catch();
 
     return () => {
@@ -93,36 +158,7 @@ function LobbyScreen({
   };
 
   return (
-    <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
-      {showNameDialogue && (
-        <div className="bg-background absolute top-0 left-0 z-50 flex h-full w-full flex-col items-center justify-center backdrop-blur-md backdrop-filter">
-          <p>Join as...</p>
-          <form
-            className="w-60"
-            action={(formdata) => {
-              dispatch({
-                type: "nameChange",
-                name: formdata.get("name")?.toString() ?? "Guest",
-              });
-              setShowNameDialogue(false);
-            }}
-          >
-            <label htmlFor="name" />
-            <input
-              className="w-full p-2 outline-none placeholder:italic"
-              placeholder="name..."
-              id="name"
-              name="name"
-              type="text"
-            />
-            <div className="bg-secondary h-0.5 w-full rounded-full" />
-            <Button className="mt-2 w-full" type="submit">
-              Ok
-            </Button>
-          </form>
-        </div>
-      )}
-
+    <>
       <div className="w-full">
         <Button
           variant="ghost"
@@ -193,7 +229,7 @@ function LobbyScreen({
           </p>
         )}
       </div>
-    </div>
+    </>
   );
 }
 

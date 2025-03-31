@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 
 namespace hub;
@@ -7,9 +8,9 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
-    public async Task JoinLobby(string gameId)
+    public async Task JoinLobby(string gameId, string name)
     {
-        Player currentPlayer = new Player();
+        Player currentPlayer = new Player(name);
 
         if (!lobbies.ContainsKey(gameId))
         {
@@ -23,23 +24,31 @@ public class RacerHub : Hub
 
         lobby.Add(currentPlayer.id, currentPlayer);
 
-        await Clients
-            .Client(Context.ConnectionId)
-            .SendAsync("NewPlayer", currentPlayer.id, currentPlayer.isHost);
+        string json = JsonSerializer.Serialize(lobby.Values);
+        await Clients.Client(Context.ConnectionId).SendAsync("NewPlayer", json);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
         await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {currentPlayer.id} joined");
 
         System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies[gameId].Keys));
+        System.Console.WriteLine("[{0}]", string.Join(", ", lobby.Values));
     }
 }
 
 public class Player
 {
-    public int id = 0;
-    public int progress = 0;
-    public int score = 0;
-    public bool isHost = false;
-    public string name = "";
+    public int id { get; set; }
+    public int progress { get; set; }
+    public int score { get; set; }
+    public bool isHost { get; set; }
+    public string name { get; set; }
+
+    public Player(string name)
+    {
+        id = 0;
+        progress = 0;
+        score = 0;
+        isHost = false;
+        this.name = name;
+    }
 }

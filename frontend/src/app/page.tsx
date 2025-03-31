@@ -6,13 +6,16 @@ import LobbyScreen from "@/components/LobbyScreen";
 import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
-import { useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function Page() {
   const urlSearchParams = useSearchParams();
   const isJoining = urlSearchParams.get("join") !== null;
-  const gameId = urlSearchParams.get("join") ?? crypto.randomUUID().toString();
+  const gameId = useMemo(
+    () => urlSearchParams.get("join") ?? crypto.randomUUID().toString(),
+    [],
+  );
 
   const currentPlayer: Player = {
     id: 1,
@@ -68,7 +71,7 @@ export default function Page() {
                 onStartGame={() => setScreen("playing")}
                 players={gameOps.players}
                 gameId={gameId}
-                curentPlayer={currentPlayer}
+                currentPlayer={gameOps.currentPlayer}
                 selectedMode={gameOps.gameMode}
               />
             );
@@ -120,6 +123,10 @@ export type GameOpsAction =
   | {
       type: "nameChange";
       name: string;
+    }
+  | {
+      type: "setPlayers";
+      players: Player[];
     };
 
 function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -128,6 +135,11 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         players: [...state.players, action.player],
+      };
+    case "setPlayers":
+      return {
+        ...state,
+        players: action.players,
       };
     case "setGameMode":
       return {
