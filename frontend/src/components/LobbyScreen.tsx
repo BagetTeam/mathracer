@@ -7,7 +7,6 @@ import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
 import { GameOpsAction } from "@/app/wrapper";
 import { ConnectionContext } from "@/app/connectionContext";
-import { withConnection } from "@/utils/connection";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -110,7 +109,6 @@ function Lobby({
 
     connection.on("AddUnloadEventListener", (player: string) => {
       const p: Player = JSON.parse(player);
-      console.log({ p });
 
       const f = async () => {
         await connection.send("RemovePlayer", gameId, p.id);
@@ -125,9 +123,7 @@ function Lobby({
       });
     });
 
-    connection
-      .send("JoinLobby", gameId, currentPlayer.name)
-      .then(() => console.log("added player"));
+    connection.send("JoinLobby", gameId, currentPlayer.name).catch();
   }, []);
 
   const copyInviteLink = () => {
@@ -217,8 +213,6 @@ function Lobby({
           {currentPlayer.isHost && players.length > 1 && (
             <Button
               onClick={async () => {
-                connection.send("StartGame", gameId);
-
                 onStartGame();
               }}
               className="math-button-primary flex items-center gap-2"

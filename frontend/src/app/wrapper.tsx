@@ -76,7 +76,10 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     )
                     .catch();
                 }}
-                onStartGame={() => setScreen("playing")}
+                onStartGame={() => {
+                  connection.send("StartGame", gameId).catch();
+                  setScreen("playing");
+                }}
                 players={gameOps.players}
                 gameId={gameId}
                 currentPlayer={gameOps.currentPlayer}
