@@ -25,10 +25,8 @@ public class RacerHub : Hub
         lobby.Add(currentPlayer.id, currentPlayer);
 
         string json = JsonSerializer.Serialize(lobby.Values);
-        await Clients.Client(Context.ConnectionId).SendAsync("NewPlayer", json);
-
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {currentPlayer.id} joined");
+        await Clients.Groups(gameId).SendAsync("NewPlayer", json);
 
         System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
         System.Console.WriteLine("[{0}]", string.Join(", ", lobby.Values));

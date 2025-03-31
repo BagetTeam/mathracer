@@ -22,7 +22,6 @@ function LobbyScreen({
 }: LobbyScreenProps) {
   const [showNameDialogue, setShowNameDialogue] = useState(true);
 
-  // console.log({ gameId });
   console.log({ currentPlayer });
 
   return (
