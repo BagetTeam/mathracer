@@ -26,7 +26,7 @@ export default function Page() {
   const [gameOps, dispatch] = useReducer(gameOpsreducer, {
     gameId: gameId,
     currentPlayer,
-    players: [currentPlayer],
+    players: [],
     gameMode: { type: "time", seconds: 10 },
   });
 
@@ -60,7 +60,6 @@ export default function Page() {
           case "lobby":
             return (
               <LobbyScreen
-                isJoining={isJoining}
                 dispatch={dispatch}
                 onBackToMenu={() => {
                   dispatch({ type: "exitLobby" });
@@ -69,7 +68,7 @@ export default function Page() {
                 onStartGame={() => setScreen("playing")}
                 players={gameOps.players}
                 gameId={gameId}
-                isHost={gameOps.currentPlayer.isHost}
+                curentPlayer={currentPlayer}
                 selectedMode={gameOps.gameMode}
               />
             );
@@ -117,6 +116,10 @@ export type GameOpsAction =
     }
   | {
       type: "exitLobby";
+    }
+  | {
+      type: "nameChange";
+      name: string;
     };
 
 function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -134,12 +137,6 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "createGame":
       return {
         ...state,
-        players: state.players.map((p) => {
-          return {
-            ...p,
-            isHost: p.id === state.currentPlayer.id,
-          };
-        }),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: true,
@@ -158,6 +155,23 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
           ...state.currentPlayer,
           isHost: false,
         },
+      };
+
+    case "nameChange":
+      return {
+        ...state,
+        currentPlayer: {
+          ...state.currentPlayer,
+          name: action.name,
+        },
+        players: state.players.map((p) =>
+          p.id === state.currentPlayer.id
+            ? {
+                ...state.currentPlayer,
+                name: action.name,
+              }
+            : p,
+        ),
       };
   }
 }

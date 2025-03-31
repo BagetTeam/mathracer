@@ -9,7 +9,6 @@ public class RacerHub : Hub
 
     public async Task JoinLobby(string gameId)
     {
-        // System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
         Player currentPlayer = new Player();
 
         if (!lobbies.ContainsKey(gameId))
@@ -24,7 +23,9 @@ public class RacerHub : Hub
 
         lobby.Add(currentPlayer.id, currentPlayer);
 
-        await Clients.Client(Context.ConnectionId).SendAsync("NewPlayer", currentPlayer);
+        await Clients
+            .Client(Context.ConnectionId)
+            .SendAsync("NewPlayer", currentPlayer.id, currentPlayer.isHost);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
         await Clients.Groups(gameId).SendAsync("NotifyJoined", $"Player {currentPlayer.id} joined");
