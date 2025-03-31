@@ -6,7 +6,7 @@ import LobbyScreen from "@/components/LobbyScreen";
 import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
-import { use, useReducer, useState } from "react";
+import { use, useEffect, useReducer, useState } from "react";
 import { ConnectionContext } from "./connectionContext";
 
 type Props = {
@@ -32,6 +32,16 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   });
 
   const connection = use(ConnectionContext)!;
+
+  useEffect(() => {
+    connection.on("GameStart", () => {
+      setScreen("playing");
+    });
+
+    return () => {
+      connection.off("GameStart");
+    };
+  }, []);
 
   return (
     <main className="flex h-full w-full items-center justify-center">
@@ -77,8 +87,9 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     .catch();
                 }}
                 onStartGame={() => {
-                  connection.send("StartGame", gameId).catch();
-                  setScreen("playing");
+                  connection
+                    .send("StartGame", gameId, JSON.stringify(gameOps.gameMode))
+                    .catch();
                 }}
                 players={gameOps.players}
                 gameId={gameId}

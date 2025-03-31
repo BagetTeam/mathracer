@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Timers;
 using equation;
 using Microsoft.AspNetCore.SignalR;
 using models;
@@ -10,6 +12,8 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
+    private static ConcurrentDictionary<string, System.Timers.Timer> timers = new();
+
     private static Dictionary<string, Game> games = new Dictionary<string, Game>();
 
     private async void syncPlayers(string gameId)
@@ -17,6 +21,8 @@ public class RacerHub : Hub
         Dictionary<int, Player> lobby = lobbies[gameId];
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
+
+        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies[gameId].Keys));
     }
 
     public async Task JoinLobby(string gameId, string name)
@@ -81,17 +87,26 @@ public class RacerHub : Hub
         syncPlayers(gameId);
     }
 
-    public void StartGame(string gameId, string mode)
+    public async Task StartGame(string gameId, string mode)
     {
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
-        GenerateEquations(gameId, selectedMode.type, selectedMode.count);
-    }
+        Equation[] equations = Equation.GenerateAllEquations(selectedMode.count);
 
-    public void GenerateEquations(string gameId, string mode, int count)
-    {
-        Equation[] equations = Equation.GenerateAllEquations(count);
-        Game game = new Game(gameId, equations, new GameMode(mode, count));
-        games.Add(gameId, game);
+        await Clients.Groups(gameId).SendAsync("GameStart", JsonSerializer.Serialize(equations));
+
+        System.Timers.Timer timer = new System.Timers.Timer(1000);
+        System.Console.WriteLine("GameStart");
+
+        int counter = 3;
+
+        timer.Elapsed += async (Object source, ElapsedEventArgs e) =>
+        {
+            await Clients.Groups(gameId).SendAsync("CountDown", counter);
+            System.Console.WriteLine("Seconds pased {0}", counter);
+            counter--;
+        };
+        timer.AutoReset = true;
+        timer.Start();
     }
 }
 

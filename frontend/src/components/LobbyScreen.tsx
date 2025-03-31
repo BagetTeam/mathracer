@@ -124,6 +124,11 @@ function Lobby({
     });
 
     connection.send("JoinLobby", gameId, currentPlayer.name).catch();
+
+    return () => {
+      connection.off("SyncPlayers");
+      connection.off("AddUnloadEventListener");
+    };
   }, []);
 
   const copyInviteLink = () => {
