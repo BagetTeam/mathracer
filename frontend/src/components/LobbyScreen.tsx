@@ -131,7 +131,7 @@ function Lobby({
     connection
       .start()
       .then(() => {
-        return connection.send("JoinLobby", gameId, currentPlayer.name);
+        connection.send("JoinLobby", gameId, currentPlayer.name);
       })
       .catch();
 

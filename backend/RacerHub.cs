@@ -46,7 +46,10 @@ public class RacerHub : Hub
 
     public void RemovePlayer(string gameId, int id)
     {
-        System.Console.WriteLine(id);
+        if (!lobbies.ContainsKey(gameId))
+        {
+            return;
+        }
 
         var lobby = lobbies[gameId];
         Player p = lobby[id];

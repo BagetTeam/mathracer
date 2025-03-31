@@ -8,6 +8,7 @@ import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
 import { useMemo, useReducer, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import * as signalR from "@microsoft/signalr";
 
 export default function Page() {
   const urlSearchParams = useSearchParams();
@@ -67,6 +68,22 @@ export default function Page() {
                 onBackToMenu={() => {
                   dispatch({ type: "exitLobby" });
                   setScreen("menu");
+
+                  const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("http://localhost:5103/hub")
+                    .build();
+
+                  connection
+                    .start()
+                    .then(() =>
+                      connection.send(
+                        "RemovePlayer",
+                        gameId,
+                        gameOps.currentPlayer.id,
+                      ),
+                    )
+                    .then(() => connection.stop())
+                    .catch();
                 }}
                 onStartGame={() => setScreen("playing")}
                 players={gameOps.players}
