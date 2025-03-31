@@ -6,28 +6,28 @@ import LobbyScreen from "@/components/LobbyScreen";
 import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
 import { GameMode, GameState, Player } from "@/types/game";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import * as signalR from "@microsoft/signalr";
+import signalR from "@microsoft/signalr";
 
 export default function Page() {
-  useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5103/hub")
-      .build();
-    connection.start();
+  // useEffect(() => {
+  //   const connection = new signalR.HubConnectionBuilder()
+  //     .withUrl("http://localhost:5103/hub")
+  //     .build();
+  //   connection.start();
 
-    connection.on("messageReceived", (username: string, message: string) => {
-      console.log(username, message);
-    });
-  }, []);
+  //   connection.on("messageReceived", (username: string, message: string) => {
+  //     console.log(username, message);
+  //   });
+  // }, []);
   const urlSearchParams = useSearchParams();
   const isJoining = urlSearchParams.get("join") !== null;
   const gameId = urlSearchParams.get("join") ?? crypto.randomUUID().toString();
 
   const currentPlayer: Player = {
-    id: crypto.randomUUID().toString(),
-    name: "Guest",
+    id: 1,
+    name: "Player",
     score: 0,
     isHost: false,
     progress: 0,
@@ -40,12 +40,6 @@ export default function Page() {
     players: [currentPlayer],
     gameMode: { type: "time", seconds: 10 },
   });
-
-  useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl("localhost:5103/hub")
-      .build();
-  }, []);
 
   return (
     <main className="flex h-full w-full items-center justify-center">
@@ -77,6 +71,8 @@ export default function Page() {
           case "lobby":
             return (
               <LobbyScreen
+                isJoining={isJoining}
+                dispatch={dispatch}
                 onBackToMenu={() => {
                   dispatch({ type: "exitLobby" });
                   setScreen("menu");
@@ -111,14 +107,14 @@ export default function Page() {
   );
 }
 
-type GameOps = {
+export type GameOps = {
   currentPlayer: Player;
   players: Player[];
   gameMode: GameMode;
   gameId: string;
 };
 
-type GameOpsAction =
+export type GameOpsAction =
   | {
       type: "addPlayer";
       player: Player;

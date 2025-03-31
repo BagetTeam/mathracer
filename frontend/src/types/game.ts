@@ -1,6 +1,5 @@
-
 export interface Player {
-  id: string;
+  id: number;
   name: string;
   score: number;
   isHost: boolean;
@@ -13,13 +12,8 @@ export interface Equation {
   answer: number;
 }
 
-export type GameMode = 
-  | { type: 'equations'; count: number }
-  | { type: 'time'; seconds: number };
+export type GameMode =
+  | { type: "equations"; count: number }
+  | { type: "time"; seconds: number };
 
-export type GameState = 
-  | 'menu'
-  | 'joining'
-  | 'lobby'
-  | 'playing'
-  | 'results';
+export type GameState = "menu" | "joining" | "lobby" | "playing" | "results";
