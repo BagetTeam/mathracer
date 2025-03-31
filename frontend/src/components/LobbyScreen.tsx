@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, ActionDispatch, useState } from "react";
+import React, { useEffect, ActionDispatch, useState, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
-//import { toast } from "@/lib/toast";
 import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
-import * as signalR from "@microsoft/signalr";
-import { GameOpsAction } from "@/app/page";
+import { GameOpsAction } from "@/app/wrapper";
+import { ConnectionContext } from "@/app/connectionContext";
+import { withConnection } from "@/utils/connection";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -21,8 +21,6 @@ function LobbyScreen({
   dispatch,
 }: LobbyScreenProps) {
   const [showNameDialogue, setShowNameDialogue] = useState(true);
-
-  console.log({ currentPlayer });
 
   return (
     <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
@@ -100,14 +98,9 @@ function Lobby({
   dispatch,
 }: LobbyProps) {
   const gameUrl = `http://localhost:3000?join=${gameId}`;
-
-  console.log({ currentPlayer });
+  const connection = use(ConnectionContext)!;
 
   useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5103/hub")
-      .build();
-
     connection.on("SyncPlayers", (players: string) => {
       dispatch({
         type: "setPlayers",
@@ -115,8 +108,9 @@ function Lobby({
       });
     });
 
-    connection.on("AddUnloadEvenListener", (player: string) => {
+    connection.on("AddUnloadEventListener", (player: string) => {
       const p: Player = JSON.parse(player);
+      console.log({ p });
 
       const f = async () => {
         await connection.send("RemovePlayer", gameId, p.id);
@@ -132,29 +126,8 @@ function Lobby({
     });
 
     connection
-      .start()
-      .then(() => {
-        connection.send("JoinLobby", gameId, currentPlayer.name);
-      })
-      .catch();
-
-    return () => {
-      connection.stop();
-    };
-  }, []);
-
-  useEffect(() => {
-    async function init() {
-      const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5103/hub")
-        .build();
-
-      await connection.start();
-
-      await connection.send("JoinLobby", gameId);
-    }
-
-    init();
+      .send("JoinLobby", gameId, currentPlayer.name)
+      .then(() => console.log("added player"));
   }, []);
 
   const copyInviteLink = () => {
@@ -243,7 +216,11 @@ function Lobby({
           <h2 className="text-lg font-semibold">Players ({players.length})</h2>
           {currentPlayer.isHost && players.length > 1 && (
             <Button
-              onClick={onStartGame}
+              onClick={async () => {
+                connection.send("StartGame", gameId);
+
+                onStartGame();
+              }}
               className="math-button-primary flex items-center gap-2"
             >
               <Play size={16} />

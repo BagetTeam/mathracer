@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 
@@ -11,14 +10,14 @@ public class RacerHub : Hub
 
     private static Dictionary<string, Game> games = new Dictionary<string, Game>();
 
-    public async void syncPlayers(string gameId)
+    private async void syncPlayers(string gameId)
     {
         Dictionary<int, Player> lobby = lobbies[gameId];
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
     }
 
-    public async Task JoinLobby(string gameId, string name, GameMode selectedMode)
+    public async Task JoinLobby(string gameId, string name)
     {
         Player currentPlayer = new Player(name);
 
@@ -26,7 +25,6 @@ public class RacerHub : Hub
         {
             lobbies.Add(gameId, new Dictionary<int, Player>());
             currentPlayer.isHost = true;
-            await GenerateEquations(gameId, selectedMode.type, selectedMode.count);
         }
 
         Dictionary<int, Player> lobby = lobbies[gameId];
@@ -47,11 +45,7 @@ public class RacerHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
         syncPlayers(gameId);
 
-        Console.WriteLine($"Equations for game {gameId}:");
-        foreach (Equation eq in games[gameId].equations)
-        {
-            Console.WriteLine(eq.equation);
-        }
+        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
     }
 
     public async void RemovePlayer(string gameId, int id)
@@ -62,6 +56,12 @@ public class RacerHub : Hub
         }
 
         var lobby = lobbies[gameId];
+
+        if (!lobby.ContainsKey(id))
+        {
+            return;
+        }
+
         Player p = lobby[id];
         lobby.Remove(id);
         if (lobby.Count == 0)
@@ -77,71 +77,87 @@ public class RacerHub : Hub
         syncPlayers(gameId);
     }
 
-    private int GetRandomInt(int min, int max) {
+    private int GetRandomInt(int min, int max)
+    {
         Random random = new Random();
         return random.Next(min, max + 1);
     }
 
-    private int GenerateId() {
+    private int GenerateId()
+    {
         return 0; //TODO
     }
 
-    private Equation GenerateAddition() {
+    private Equation GenerateAddition()
+    {
         int num1 = GetRandomInt(1, 20);
         int num2 = GetRandomInt(1, 20);
         return new Equation(GenerateId(), $"{num1} + {num2} = ?", num1 + num2);
     }
 
-    private Equation GenerateSubtraction() {
+    private Equation GenerateSubtraction()
+    {
         int answer = GetRandomInt(1, 20);
         int num2 = GetRandomInt(1, 10);
         int num1 = answer + num2;
         return new Equation(GenerateId(), $"{num1} - {num2} = ?", answer);
     }
 
-    private Equation GenerateMultiplication() {
+    private Equation GenerateMultiplication()
+    {
         int num1 = GetRandomInt(1, 12);
         int num2 = GetRandomInt(1, 12);
         return new Equation(GenerateId(), $"{num1} × {num2} = ?", num1 * num2);
     }
 
-    private Equation GenerateDivision() {
+    private Equation GenerateDivision()
+    {
         int answer = GetRandomInt(1, 10);
         int num2 = GetRandomInt(1, 10);
         int num1 = answer * num2;
         return new Equation(GenerateId(), $"{num1} ÷ {num2} = ?", answer);
     }
 
-    private Equation GenerateEquation() {
+    private Equation GenerateEquation()
+    {
         int operationType = GetRandomInt(1, 5);
-        switch (operationType) {
-        case 1:
-            return GenerateAddition();
-        case 2:
-            return GenerateSubtraction();
-        case 3:
-            return GenerateMultiplication();
-        case 4:
-            return GenerateDivision();
-        default:
-            return GenerateAddition();
+        switch (operationType)
+        {
+            case 1:
+                return GenerateAddition();
+            case 2:
+                return GenerateSubtraction();
+            case 3:
+                return GenerateMultiplication();
+            case 4:
+                return GenerateDivision();
+            default:
+                return GenerateAddition();
         }
     }
-    public Equation[] GenerateAllEquations(int count) {
+
+    public Equation[] GenerateAllEquations(int count)
+    {
         Equation[] equations = new Equation[count];
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++)
+        {
             equations[i] = GenerateEquation();
         }
         return equations;
     }
-    public async Task GenerateEquations(string gameId, string mode, int count) 
-    { 
+
+    public void GenerateEquations(string gameId, string mode, int count)
+    {
         Equation[] equations = GenerateAllEquations(count);
-        Game game = new Game(){id = gameId, equations = equations, gameMode = new GameMode(mode, count)};
-        Dictionary<int, Player> lobby = lobbies[gameId];
+        Game game = new Game(gameId, equations, new GameMode(mode, count));
         games.Add(gameId, game);
     }
-    
+
+    public void StartGame(string gameId, string mode)
+    {
+        GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
+        GenerateEquations(gameId, selectedMode.type, selectedMode.count);
+    }
 }
 
 public class Player
@@ -161,31 +177,50 @@ public class Player
         this.name = name;
     }
 }
-public class GameMode {
-    public string type {get; set;}
-    public int count {get; set;
-    }
-    public GameMode() {
+
+public class GameMode
+{
+    public string type { get; set; }
+    public int count { get; set; }
+
+    public GameMode()
+    {
         this.type = "time";
         this.count = 100;
     }
-    public GameMode(string type, int count) {
+
+    public GameMode(string type, int count)
+    {
         this.type = type;
         this.count = count;
     }
 }
-public class Equation {
-    public int id {get; set;}
-    public string equation {get; set;}
-    public int answer {get; set;}
-    public Equation(int id, string equation, int answer) {
+
+public class Equation
+{
+    public int id { get; set; }
+    public string equation { get; set; }
+    public int answer { get; set; }
+
+    public Equation(int id, string equation, int answer)
+    {
         this.id = id;
         this.equation = equation;
         this.answer = answer;
     }
 }
-public class Game {
-    public string id {get; set;}
-    public GameMode gameMode {get; set;}
-    public Equation[] equations {get; set;}
+
+public class Game
+{
+    public string id { get; set; }
+    public GameMode gameMode { get; set; }
+    public Equation[] equations { get; set; }
+
+    public Game(string id, Equation[] eq, GameMode gameMode)
+    {
+        this.id = id;
+        this.gameMode = gameMode;
+        this.equations = eq;
+    }
 }
+

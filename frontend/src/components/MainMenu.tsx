@@ -23,7 +23,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
     <div className="animate-fade-in mx-auto flex max-w-3xl flex-col items-center space-y-8">
       <div className="w-full space-y-3 text-center">
         <h1 className="from-primary via-secondary to-accent bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
-          Math Race Quest
+          Mathracer
         </h1>
         <p className="text-muted-foreground text-lg">
           Race against others to solve math equations and claim victory!
