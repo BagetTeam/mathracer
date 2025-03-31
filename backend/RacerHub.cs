@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 
@@ -8,6 +9,8 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
+    private static Dictionary<string, Game> games = new Dictionary<string, Game>();
+
     public async void syncPlayers(string gameId)
     {
         Dictionary<int, Player> lobby = lobbies[gameId];
@@ -15,7 +18,7 @@ public class RacerHub : Hub
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
     }
 
-    public async Task JoinLobby(string gameId, string name)
+    public async Task JoinLobby(string gameId, string name, GameMode selectedMode)
     {
         Player currentPlayer = new Player(name);
 
@@ -23,6 +26,7 @@ public class RacerHub : Hub
         {
             lobbies.Add(gameId, new Dictionary<int, Player>());
             currentPlayer.isHost = true;
+            await GenerateEquations(gameId, selectedMode.type, selectedMode.count);
         }
 
         Dictionary<int, Player> lobby = lobbies[gameId];
@@ -38,10 +42,16 @@ public class RacerHub : Hub
 
         await Clients
             .Client(Context.ConnectionId)
-            .SendAsync("AddUnloadEvenListener", JsonSerializer.Serialize(currentPlayer));
+            .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
         syncPlayers(gameId);
+
+        Console.WriteLine($"Equations for game {gameId}:");
+        foreach (Equation eq in games[gameId].equations)
+        {
+            Console.WriteLine(eq.equation);
+        }
     }
 
     public async void RemovePlayer(string gameId, int id)
@@ -66,6 +76,72 @@ public class RacerHub : Hub
 
         syncPlayers(gameId);
     }
+
+    private int GetRandomInt(int min, int max) {
+        Random random = new Random();
+        return random.Next(min, max + 1);
+    }
+
+    private int GenerateId() {
+        return 0; //TODO
+    }
+
+    private Equation GenerateAddition() {
+        int num1 = GetRandomInt(1, 20);
+        int num2 = GetRandomInt(1, 20);
+        return new Equation(GenerateId(), $"{num1} + {num2} = ?", num1 + num2);
+    }
+
+    private Equation GenerateSubtraction() {
+        int answer = GetRandomInt(1, 20);
+        int num2 = GetRandomInt(1, 10);
+        int num1 = answer + num2;
+        return new Equation(GenerateId(), $"{num1} - {num2} = ?", answer);
+    }
+
+    private Equation GenerateMultiplication() {
+        int num1 = GetRandomInt(1, 12);
+        int num2 = GetRandomInt(1, 12);
+        return new Equation(GenerateId(), $"{num1} × {num2} = ?", num1 * num2);
+    }
+
+    private Equation GenerateDivision() {
+        int answer = GetRandomInt(1, 10);
+        int num2 = GetRandomInt(1, 10);
+        int num1 = answer * num2;
+        return new Equation(GenerateId(), $"{num1} ÷ {num2} = ?", answer);
+    }
+
+    private Equation GenerateEquation() {
+        int operationType = GetRandomInt(1, 5);
+        switch (operationType) {
+        case 1:
+            return GenerateAddition();
+        case 2:
+            return GenerateSubtraction();
+        case 3:
+            return GenerateMultiplication();
+        case 4:
+            return GenerateDivision();
+        default:
+            return GenerateAddition();
+        }
+    }
+    public Equation[] GenerateAllEquations(int count) {
+        Equation[] equations = new Equation[count];
+        for (int i = 0; i < count; i++) {
+            equations[i] = GenerateEquation();
+        }
+        return equations;
+    }
+    public async Task GenerateEquations(string gameId, string mode, int count) 
+    { 
+        Equation[] equations = GenerateAllEquations(count);
+        Game game = new Game(){id = gameId, equations = equations, gameMode = new GameMode(mode, count)};
+        Dictionary<int, Player> lobby = lobbies[gameId];
+        games.Add(gameId, game);
+    }
+    
 }
 
 public class Player
@@ -84,4 +160,32 @@ public class Player
         isHost = false;
         this.name = name;
     }
+}
+public class GameMode {
+    public string type {get; set;}
+    public int count {get; set;
+    }
+    public GameMode() {
+        this.type = "time";
+        this.count = 100;
+    }
+    public GameMode(string type, int count) {
+        this.type = type;
+        this.count = count;
+    }
+}
+public class Equation {
+    public int id {get; set;}
+    public string equation {get; set;}
+    public int answer {get; set;}
+    public Equation(int id, string equation, int answer) {
+        this.id = id;
+        this.equation = equation;
+        this.answer = answer;
+    }
+}
+public class Game {
+    public string id {get; set;}
+    public GameMode gameMode {get; set;}
+    public Equation[] equations {get; set;}
 }
