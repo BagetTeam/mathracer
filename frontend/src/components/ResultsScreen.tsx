@@ -9,6 +9,7 @@ interface ResultsScreenProps {
   gameMode: GameMode;
   onPlayAgain: () => void;
   onBackToMenu: () => void;
+  currentPlayer: Player;
 }
 
 const ResultsScreen: React.FC<ResultsScreenProps> = ({
@@ -16,6 +17,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   gameMode,
   onPlayAgain,
   onBackToMenu,
+  currentPlayer,
 }) => {
   // Get the winner(s) - could be multiple in case of tie
   const highestScore = Math.max(...players.map((player) => player.score));
@@ -61,7 +63,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <PlayerList
           players={sortedPlayers}
           showScores={true}
-          currentPlayerId={0}
+          currentPlayerId={currentPlayer.id}
         />
       </div>
 

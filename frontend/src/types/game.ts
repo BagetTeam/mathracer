@@ -12,13 +12,7 @@ export interface Equation {
   answer: number;
 }
 
-export interface GameMode {
-  type: string;
-  count: number;
-}
-// export type GameMode =
-//   | { type: "equations"; count: number }
-//   | { type: "time"; seconds: number };
+export type GameMode = { type: "equations" | "time"; count: number };
 
 export type GameState = "menu" | "joining" | "lobby" | "playing" | "results";
 
