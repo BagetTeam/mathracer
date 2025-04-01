@@ -116,6 +116,11 @@ public class RacerHub : Hub
 
         await Clients.Groups(gameId).SendAsync("GameStart");
 
+        if (selectedMode.type != "time")
+        {
+            return;
+        }
+
         int time = 0;
         elapsed = 0;
         bool run = true;
@@ -131,7 +136,7 @@ public class RacerHub : Hub
 
             elapsed = (DateTime.Now - now).Seconds;
 
-            if (selectedMode.type == "time" && time > selectedMode.count)
+            if (time > selectedMode.count)
             {
                 run = false;
             }

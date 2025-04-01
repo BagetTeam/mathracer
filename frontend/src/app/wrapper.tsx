@@ -30,7 +30,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
     gameId,
     currentPlayer: initialPlayer,
     players: [],
-    gameMode: { type: "time", count: 10000 },
+    gameMode: { type: "time", count: 10 },
     equations: [],
   });
 
