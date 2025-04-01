@@ -131,7 +131,7 @@ function Lobby({
       connection.off("AddUnloadEventListener");
     };
   }, []);
-
+  console.log(currentPlayer);
   const copyInviteLink = () => {
     navigator.clipboard.writeText(gameUrl);
     //toast.success("Invite link copied to clipboard");

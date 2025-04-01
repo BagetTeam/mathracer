@@ -16,7 +16,7 @@ type Props = {
 };
 
 export default function Wrapper({ gameId, isJoining }: Props) {
-  const currentPlayer: Player = {
+  const initialPlayer: Player = {
     id: 1,
     name: "Player",
     score: 0,
@@ -26,10 +26,10 @@ export default function Wrapper({ gameId, isJoining }: Props) {
 
   const [screen, setScreen] = useState<GameState>(isJoining ? "lobby" : "menu");
   const [gameOps, dispatch] = useReducer(gameOpsreducer, {
-    gameId: gameId,
-    currentPlayer,
+    gameId,
+    currentPlayer: initialPlayer,
     players: [],
-    gameMode: { type: "time", count: 10 },
+    gameMode: { type: "time", count: 100 },
     equations: [],
   });
 
@@ -91,11 +91,15 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 }}
                 onStartGame={() => {
                   connection
-                    .send("StartGame", gameId, JSON.stringify(gameOps.gameMode))
+                    .send(
+                      "StartGame",
+                      gameOps.gameId,
+                      JSON.stringify(gameOps.gameMode),
+                    )
                     .catch();
                 }}
                 players={gameOps.players}
-                gameId={gameId}
+                gameId={gameOps.gameId}
                 currentPlayer={gameOps.currentPlayer}
                 selectedMode={gameOps.gameMode}
               />
@@ -113,7 +117,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
           case "results":
             return (
               <ResultsScreen
-                currentPlayer={currentPlayer}
+                currentPlayer={gameOps.currentPlayer}
                 players={gameOps.players}
                 gameMode={gameOps.gameMode}
                 onBackToMenu={() => setScreen("menu")}
