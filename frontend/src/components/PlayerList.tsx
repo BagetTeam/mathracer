@@ -18,7 +18,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const sortedPlayers = showScores
     ? [...players].sort((a, b) => b.score - a.score)
     : players;
-  console.log(players);
+
   return (
     <div className="space-y-2">
       {sortedPlayers.map((player) => (

@@ -1,115 +1,105 @@
 "use client";
 
-import React, { useState, useEffect, useRef, ActionDispatch } from "react";
+import React, { useState, useEffect, useRef, use, ActionDispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Player, GameMode, Equation } from "@/types/game";
 import PlayerList from "./PlayerList";
 import EquationStack from "./EquationStack";
-import { GameOpsAction } from "@/app/page";
 
-interface GameScreenProps {
-  currentPlayer: Player;
-  players: Player[];
-  gameMode: GameMode;
-  gameId: string;
-  equations: Equation[];
-  onGameEnd: () => void;
+import { GameOps, GameOpsAction } from "@/app/gameOps";
+import { Progress } from "./ui/progress";
+import { ConnectionContext } from "@/app/connectionContext";
+
+interface Props {
+  gameOps: GameOps;
   dispatch: ActionDispatch<[action: GameOpsAction]>;
+  onGameEnd: () => void;
 }
 
-const GameScreen: React.FC<GameScreenProps> = ({
-  currentPlayer,
-  players,
-  gameMode,
-  gameId,
-  equations,
-  onGameEnd,
-  dispatch,
-}) => {
-  const [answer, setAnswer] = useState("");
+function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
+  const { gameMode, currentPlayer, players, equations } = gameOps;
+
+  const [countDown, setCountDown] = useState(3);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const connection = use(ConnectionContext)!;
+
   const [boxStyle, setBoxStyle] = useState("math-button-primary");
   const [formStyle, setFormStyle] = useState("bg-background/70");
 
   const [animation, setAnimation] = useState("");
   const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null!);
 
-  const timeRemaining = gameMode.count / 10;
-
-  function onSubmitAnswer(number: number) {
-    if (number == equations[currentEquationIndex].answer) {
-      setCurrentEquationIndex(currentEquationIndex + 1);
-      dispatch({
-        type: "setCurrentPlayer",
-        player: {
-          ...currentPlayer,
-          score: currentPlayer.score + 1,
-        },
-      });
-      setAnswer("");
-      console.log(currentPlayer.score);
-      console.log("=++_+-+__++_-+=-_+-+_+_+-+-=+_-_++_-+_+_+_=-=-=-+_");
-    } else {
-      setBoxStyle("math-button-destructive");
-      setFormStyle("bg-destructive/70");
-    }
-  }
-
-  // Focus input when component mounts and after each equation
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [currentEquationIndex]);
+    connection.on("CountDown", (count: number) => {
+      setCountDown(count);
+    });
+
+    connection.on("SyncPlayers", (players: string) => {
+      dispatch({
+        type: "setPlayers",
+        players: JSON.parse(players),
+      });
+    });
+
+    connection.on("TimeElapsed", (time) => setTimeElapsed(time));
+
+    return () => {
+      connection.off("CountDown");
+      connection.off("SyncPlayers");
+      connection.off("TimeElapsed");
+    };
+  }, []);
 
   // Handle time-based game end
   useEffect(() => {
-    if (gameMode.type === "time" && timeRemaining === 0) {
+    if (gameMode.type === "time" && timeElapsed === gameMode.count) {
       onGameEnd();
     }
-  }, [timeRemaining, gameMode, onGameEnd]);
+  }, [timeElapsed]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (answer.trim()) {
-      onSubmitAnswer(Number(answer));
-      setAnswer("");
-      setBoxStyle("math-button-primary");
-      setFormStyle("bg-background/70");
+  useEffect(() => {
+    if (countDown == 0) {
+      inputRef.current.focus();
+    }
+  }, [countDown]);
 
-      // Add animation for feedback
+  async function submitAnswer() {
+    setCurrentEquationIndex(currentEquationIndex + 1);
+
+    const score = currentPlayer.score + 1;
+
+    dispatch({
+      type: "setCurrentPlayer",
+      player: {
+        ...currentPlayer,
+        score: score,
+      },
+    });
+    inputRef.current.value = "";
+
+    await connection
+      .send("UpdateScore", gameOps.gameId, currentPlayer.id, score)
+      .catch();
+  }
+
+  async function submitIfCorrect(answer: string) {
+    if (answer === equations[currentEquationIndex].answer.toString()) {
       setAnimation("animate-scale-in");
       setTimeout(() => setAnimation(""), 300);
-    }
-  };
-
-  const isAnswer = (e: string) => {
-    setAnswer(e);
-    console.log(boxStyle);
-    if (e.length >= equations[currentEquationIndex].answer.toString().length) {
-      if (e.trim()) {
-        onSubmitAnswer(Number(e));
-
-        // Add animation for feedback
-        setAnimation("animate-scale-in");
-        setTimeout(() => setAnimation(""), 300);
-      }
+      await submitAnswer();
     } else {
       setBoxStyle("math-button-primary");
       setFormStyle("bg-background/70");
     }
-  };
+  }
 
   // Calculate progress based on game mode
   const calculateProgress = () => {
     if (gameMode.type === "equations") {
       return (currentEquationIndex / gameMode.count) * 100;
-    } else if (gameMode.type === "time" && timeRemaining !== undefined) {
-      return (
-        ((gameMode.count / 10 - timeRemaining) / gameMode.count / 10) * 100
-      );
+    } else if (gameMode.type === "time" && timeElapsed !== undefined) {
+      return (timeElapsed / gameMode.count) * 100;
     }
     return 0;
   };
@@ -119,74 +109,80 @@ const GameScreen: React.FC<GameScreenProps> = ({
     if (gameMode.type === "equations") {
       return `Equation ${currentEquationIndex + 1} of ${gameMode.count}`;
     } else {
-      return timeRemaining !== undefined
-        ? `${timeRemaining} seconds remaining`
+      return timeElapsed !== undefined
+        ? `${gameMode.count - timeElapsed} seconds remaining`
         : "";
     }
   };
 
   return (
-    <div className="animate-fade-in mx-auto flex max-w-5xl flex-col gap-6 lg:flex-row">
-      {/* Main game area */}
-      <div className="flex flex-grow flex-col lg:order-1">
-        <div className="mb-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-lg font-medium">{getProgressText()}</h2>
-            <div className="text-muted-foreground text-sm">
-              {gameMode.type === "equations"
-                ? `First to ${gameMode.count}`
-                : `${gameMode.count / 10}s Challenge`}
+    <>
+      {countDown > 0 && (
+        <div className="absolute z-50 flex h-full w-full items-center justify-center">
+          {countDown}
+        </div>
+      )}
+      <div className="animate-fade-in mx-auto flex h-full w-full max-w-5xl flex-col gap-6 lg:flex-row">
+        {/* Main game area */}
+        <div className="flex flex-grow flex-col lg:order-1">
+          <div className="mb-6">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-lg font-medium">{getProgressText()}</h2>
+              <div className="text-muted-foreground text-sm">
+                {gameMode.type === "equations"
+                  ? `First to ${gameMode.count}`
+                  : `${gameMode.count}s Challenge`}
+              </div>
             </div>
-          </div>
-          {/* <Progress value={calculateProgress()} className="h-2" /> */}
-        </div>
-
-        <div className="mb-8 flex flex-grow flex-col items-center justify-center">
-          <div className={`mb-6 w-full ${animation}`}>
-            <EquationStack
-              equations={equations}
-              currentIndex={currentEquationIndex}
-              stackSize={3}
-            />
+            <Progress value={calculateProgress()} className="h-2" />
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className={`flex w-full max-w-xs flex-col items-center`}
-          >
-            <Input
-              ref={inputRef}
-              type="number"
-              value={answer}
-              onChange={(e) => isAnswer(e.target.value)}
-              placeholder="Enter your answer"
-              className={`mb-4 h-14 text-center text-xl ${formStyle}`}
-              autoComplete="off"
-            />
-            <Button
-              type="submit"
-              className={`w-full ${boxStyle}`}
-              disabled={!answer.trim()}
+          <div className="mb-8 flex flex-grow flex-col items-center justify-center">
+            <div className={`mb-6 w-full ${animation}`}>
+              <EquationStack
+                equations={equations}
+                currentIndex={currentEquationIndex}
+                stackSize={3}
+              />
+            </div>
+
+            <form
+              onSubmit={(e: React.FormEvent) => {
+                e.preventDefault();
+                inputRef.current.value = "";
+                submitIfCorrect(inputRef.current.value);
+              }}
+              className={`flex w-full max-w-xs flex-col items-center`}
             >
-              Submit
-            </Button>
-          </form>
+              <Input
+                ref={inputRef}
+                type="number"
+                onChange={(e) => submitIfCorrect(e.target.value)}
+                placeholder="Enter your answer"
+                className={`mb-4 h-14 text-center text-xl ${formStyle}`}
+                autoComplete="off"
+              />
+              <Button type="submit" className={`w-full ${boxStyle}`}>
+                Submit
+              </Button>
+            </form>
+          </div>
         </div>
-      </div>
 
-      {/* Leaderboard sidebar */}
-      <div className="lg:order-2 lg:w-64">
-        <div className="sticky top-4">
-          <h3 className="mb-3 text-lg font-semibold">Leaderboard</h3>
-          <PlayerList
-            players={players}
-            showScores={true}
-            currentPlayerId={currentPlayer.id}
-          />
+        {/* Leaderboard sidebar */}
+        <div className="lg:order-2 lg:w-64">
+          <div className="sticky">
+            <h3 className="mb-3 text-lg font-semibold">Leaderboard</h3>
+            <PlayerList
+              players={players}
+              showScores
+              currentPlayerId={currentPlayer.id}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
-};
+}
 
 export default GameScreen;

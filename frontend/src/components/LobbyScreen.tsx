@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect, ActionDispatch, useState } from "react";
+import React, { useEffect, ActionDispatch, useState, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
-//import { toast } from "@/lib/toast";
 import PlayerList from "./PlayerList";
-import { Player, GameMode, Equation } from "@/types/game";
-import * as signalR from "@microsoft/signalr";
-import { GameOpsAction } from "@/app/page";
+import { Player, GameMode } from "@/types/game";
+import { GameOpsAction } from "@/app/gameOps";
+import { ConnectionContext } from "@/app/connectionContext";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -21,8 +20,6 @@ function LobbyScreen({
   dispatch,
 }: LobbyScreenProps) {
   const [showNameDialogue, setShowNameDialogue] = useState(true);
-
-  console.log({ currentPlayer });
 
   return (
     <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
@@ -71,6 +68,7 @@ function SetName({ dispatch, setShowNameDialogue }: SetNameProps) {
           id="name"
           name="name"
           type="text"
+          autoFocus
         />
         <div className="bg-secondary h-0.5 w-full rounded-full" />
         <Button className="mt-2 w-full" type="submit">
@@ -100,14 +98,9 @@ function Lobby({
   dispatch,
 }: LobbyProps) {
   const gameUrl = `http://localhost:3000?join=${gameId}`;
-
-  console.log({ currentPlayer });
+  const connection = use(ConnectionContext)!;
 
   useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5103/hub")
-      .build();
-
     connection.on("SyncPlayers", (players: string) => {
       dispatch({
         type: "setPlayers",
@@ -131,28 +124,11 @@ function Lobby({
       });
     });
 
-    connection.on("SyncEquations", (equations: string) => {
-      console.log("Raw equations data:", equations);
-      dispatch({
-        type: "setEquations",
-        equations: JSON.parse(equations),
-      });
-    });
-
-    connection
-      .start()
-      .then(() => {
-        connection.send(
-          "JoinLobby",
-          gameId,
-          currentPlayer.name,
-          JSON.stringify(selectedMode),
-        );
-      })
-      .catch();
+    connection.send("JoinLobby", gameId, currentPlayer.name).catch();
 
     return () => {
-      connection.stop();
+      connection.off("SyncPlayers");
+      connection.off("AddUnloadEventListener");
     };
   }, []);
 
@@ -183,7 +159,7 @@ function Lobby({
     if (selectedMode.type === "equations") {
       return `First to solve ${selectedMode.count} equations wins`;
     } else {
-      return `Solve the most equations in ${selectedMode.count / 10} seconds`;
+      return `Solve the most equations in ${selectedMode.count} seconds`;
     }
   };
 
@@ -242,7 +218,9 @@ function Lobby({
           <h2 className="text-lg font-semibold">Players ({players.length})</h2>
           {currentPlayer.isHost && players.length > 1 && (
             <Button
-              onClick={onStartGame}
+              onClick={async () => {
+                onStartGame();
+              }}
               className="math-button-primary flex items-center gap-2"
             >
               <Play size={16} />
