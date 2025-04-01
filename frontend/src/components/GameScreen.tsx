@@ -30,27 +30,6 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
   const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null!);
 
-  const timeRemaining = gameMode.count / 10;
-
-  function onSubmitAnswer(number: number) {
-    if (number == equations[currentEquationIndex].answer) {
-      setCurrentEquationIndex(currentEquationIndex + 1);
-      dispatch({
-        type: "setCurrentPlayer",
-        player: {
-          ...currentPlayer,
-          score: currentPlayer.score + 1,
-        },
-      });
-      inputRef.current.value = "";
-      console.log(currentPlayer.score);
-      console.log("=++_+-+__++_-+=-_+-+_+_+-+-=+_-_++_-+_+_+_=-=-=-+_");
-    } else {
-      setBoxStyle("math-button-destructive");
-      setFormStyle("bg-destructive/70");
-    }
-  }
-
   useEffect(() => {
     connection.on("CountDown", (count: number) => {
       setCountDown(count);
@@ -85,41 +64,42 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     }
   }, [countDown]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const answer = inputRef.current?.value ?? "";
+  async function submitAnswer() {
+    setCurrentEquationIndex(currentEquationIndex + 1);
 
-    onSubmitAnswer(Number(answer));
+    const score = currentPlayer.score + 1;
+
+    dispatch({
+      type: "setCurrentPlayer",
+      player: {
+        ...currentPlayer,
+        score: score,
+      },
+    });
     inputRef.current.value = "";
-    setBoxStyle("math-button-primary");
-    setFormStyle("bg-background/70");
 
-    // Add animation for feedback
-    setAnimation("animate-scale-in");
-    setTimeout(() => setAnimation(""), 300);
-  };
+    await connection
+      .send("UpdateScore", gameOps.gameId, currentPlayer.id, score)
+      .catch();
+  }
 
-  const isAnswer = (e: string) => {
-    if (e.length >= equations[currentEquationIndex].answer.toString().length) {
-      if (e.trim()) {
-        onSubmitAnswer(Number(e));
-
-        // Add animation for feedback
-        setAnimation("animate-scale-in");
-        setTimeout(() => setAnimation(""), 300);
-      }
+  async function submitIfCorrect(answer: string) {
+    if (answer === equations[currentEquationIndex].answer.toString()) {
+      setAnimation("animate-scale-in");
+      setTimeout(() => setAnimation(""), 300);
+      await submitAnswer();
     } else {
       setBoxStyle("math-button-primary");
       setFormStyle("bg-background/70");
     }
-  };
+  }
 
   // Calculate progress based on game mode
   const calculateProgress = () => {
     if (gameMode.type === "equations") {
       return (currentEquationIndex / gameMode.count) * 100;
     } else if (gameMode.type === "time" && timeElapsed !== undefined) {
-      return ((10 * timeElapsed) / gameMode.count) * 100;
+      return (timeElapsed / gameMode.count) * 100;
     }
     return 0;
   };
@@ -151,7 +131,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
               <div className="text-muted-foreground text-sm">
                 {gameMode.type === "equations"
                   ? `First to ${gameMode.count}`
-                  : `${gameMode.count / 10}s Challenge`}
+                  : `${gameMode.count}s Challenge`}
               </div>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
@@ -167,25 +147,22 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
             </div>
 
             <form
-              onSubmit={handleSubmit}
+              onSubmit={(e: React.FormEvent) => {
+                e.preventDefault();
+                inputRef.current.value = "";
+                submitIfCorrect(inputRef.current.value);
+              }}
               className={`flex w-full max-w-xs flex-col items-center`}
             >
               <Input
                 ref={inputRef}
                 type="number"
-                onChange={(e) => isAnswer(e.target.value)}
+                onChange={(e) => submitIfCorrect(e.target.value)}
                 placeholder="Enter your answer"
                 className={`mb-4 h-14 text-center text-xl ${formStyle}`}
                 autoComplete="off"
               />
               <Button type="submit" className={`w-full ${boxStyle}`}>
-                <Input
-                  ref={inputRef}
-                  type="number"
-                  placeholder="Enter your answer"
-                  className="mb-4 h-14 text-center text-xl"
-                  autoComplete="off"
-                />
                 Submit
               </Button>
             </form>
@@ -198,7 +175,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
             <h3 className="mb-3 text-lg font-semibold">Leaderboard</h3>
             <PlayerList
               players={players}
-              showScores={true}
+              showScores
               currentPlayerId={currentPlayer.id}
             />
           </div>

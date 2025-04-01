@@ -12,13 +12,11 @@ public class RacerHub : Hub
 
     private static Dictionary<string, Game> games = new Dictionary<string, Game>();
 
-    private async void syncPlayers(string gameId)
+    private async void SyncPlayers(string gameId)
     {
         Dictionary<int, Player> lobby = lobbies[gameId];
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
-
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies[gameId].Keys));
     }
 
     public async Task SyncEquations(string gameId)
@@ -54,9 +52,9 @@ public class RacerHub : Hub
             .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        syncPlayers(gameId);
+        SyncPlayers(gameId);
 
-        System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
+        // System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
     }
 
     public async void RemovePlayer(string gameId, int id)
@@ -87,20 +85,19 @@ public class RacerHub : Hub
         // TODO: change host if host leaves
         // if (p.isHost) {}
 
-        syncPlayers(gameId);
+        SyncPlayers(gameId);
     }
 
     public async Task StartGame(string gameId, string mode)
     {
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
-        Console.WriteLine(selectedMode.count);
-        Equation[] equations = Equation.GenerateAllEquations(selectedMode.count);
+        Equation[] equations = Equation.GenerateAllEquations(
+            selectedMode.count * (selectedMode.type == "time" ? 10 : 1)
+        );
 
         await Clients
             .Groups(gameId)
             .SendAsync("StartCountdown", JsonSerializer.Serialize(equations));
-
-        System.Console.WriteLine("Start Countdown");
 
         int count = 3;
         DateTime now = DateTime.Now;
@@ -110,7 +107,6 @@ public class RacerHub : Hub
             if (elapsed >= 1)
             {
                 await Clients.Groups(gameId).SendAsync("CountDown", count);
-                System.Console.WriteLine("Seconds pased {0}", count);
                 elapsed = 0;
                 now = DateTime.Now;
                 count--;
@@ -119,7 +115,6 @@ public class RacerHub : Hub
             elapsed = (DateTime.Now - now).Seconds;
         }
 
-        System.Console.WriteLine("Game started!!");
         await Clients.Groups(gameId).SendAsync("GameStart");
 
         int time = 0;
@@ -131,7 +126,6 @@ public class RacerHub : Hub
             {
                 time++;
                 await Clients.Groups(gameId).SendAsync("TimeElapsed", time);
-                System.Console.WriteLine("{0} Seconds passed", time);
                 elapsed = 0;
                 now = DateTime.Now;
             }
@@ -143,5 +137,15 @@ public class RacerHub : Hub
                 run = false;
             }
         }
+    }
+
+    public void UpdateScore(string gameId, int playerId, int score)
+    {
+        var lobby = lobbies[gameId];
+        var player = lobby[playerId];
+        player.score = score;
+        Console.WriteLine(player.score);
+
+        SyncPlayers(gameId);
     }
 }

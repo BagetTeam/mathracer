@@ -159,7 +159,7 @@ function Lobby({
     if (selectedMode.type === "equations") {
       return `First to solve ${selectedMode.count} equations wins`;
     } else {
-      return `Solve the most equations in ${selectedMode.count / 10} seconds`;
+      return `Solve the most equations in ${selectedMode.count} seconds`;
     }
   };
 

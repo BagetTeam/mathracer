@@ -33,7 +33,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <p className="text-muted-foreground">
           {gameMode.type === "equations"
             ? `First to solve ${gameMode.count} equations`
-            : `Most equations solved in ${gameMode.count / 10} seconds`}
+            : `Most equations solved in ${gameMode.count} seconds`}
         </p>
       </div>
 
