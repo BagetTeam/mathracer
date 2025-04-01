@@ -9,6 +9,7 @@ import { GameState, Player } from "@/types/game";
 import { use, useEffect, useReducer, useState } from "react";
 import { ConnectionContext } from "./connectionContext";
 import { gameOpsreducer } from "./gameOps";
+import { withConnection } from "@/utils/connection";
 
 type Props = {
   gameId: string;
@@ -29,7 +30,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
     gameId,
     currentPlayer: initialPlayer,
     players: [],
-    gameMode: { type: "time", count: 100 },
+    gameMode: { type: "time", count: 10000 },
     equations: [],
   });
 
@@ -58,7 +59,6 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 }
                 onJoinGame={() => setScreen("joining")}
                 onCreateGame={() => {
-                  dispatch({ type: "createGame" });
                   setScreen("lobby");
                 }}
                 onStartSinglePlayer={() => {
@@ -90,13 +90,15 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     .catch();
                 }}
                 onStartGame={() => {
-                  connection
-                    .send(
-                      "StartGame",
-                      gameOps.gameId,
-                      JSON.stringify(gameOps.gameMode),
-                    )
-                    .catch();
+                  withConnection(async (c) => {
+                    await c
+                      .send(
+                        "StartGame",
+                        gameId,
+                        JSON.stringify(gameOps.gameMode),
+                      )
+                      .catch();
+                  });
                 }}
                 players={gameOps.players}
                 gameId={gameOps.gameId}

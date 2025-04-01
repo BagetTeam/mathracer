@@ -132,6 +132,10 @@ function Lobby({
     };
   }, []);
   console.log(currentPlayer);
+
+  console.log({ currentPlayer });
+  console.log({ players });
+
   const copyInviteLink = () => {
     navigator.clipboard.writeText(gameUrl);
     //toast.success("Invite link copied to clipboard");

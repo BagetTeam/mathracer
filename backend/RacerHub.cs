@@ -10,20 +10,11 @@ public class RacerHub : Hub
     private static Dictionary<string, Dictionary<int, Player>> lobbies =
         new Dictionary<string, Dictionary<int, Player>>();
 
-    private static Dictionary<string, Game> games = new Dictionary<string, Game>();
-
-    private async void SyncPlayers(string gameId)
+    private async Task SyncPlayers(string gameId)
     {
         Dictionary<int, Player> lobby = lobbies[gameId];
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
-    }
-
-    public async Task SyncEquations(string gameId)
-    {
-        Game game = games[gameId];
-        string json = JsonSerializer.Serialize(game.equations);
-        await Clients.Groups(gameId).SendAsync("SyncEquations", json);
     }
 
     public async Task JoinLobby(string gameId, string name)
@@ -52,13 +43,21 @@ public class RacerHub : Hub
             .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        SyncPlayers(gameId);
+        await SyncPlayers(gameId);
 
-        // System.Console.WriteLine("[{0}]", string.Join(", ", lobbies.Keys));
+        System.Console.WriteLine(
+            "{0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
     }
 
     public async void RemovePlayer(string gameId, int id)
     {
+        System.Console.WriteLine(
+            "{0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
+
         if (!lobbies.ContainsKey(gameId))
         {
             return;
@@ -85,7 +84,7 @@ public class RacerHub : Hub
         // TODO: change host if host leaves
         // if (p.isHost) {}
 
-        SyncPlayers(gameId);
+        await SyncPlayers(gameId);
     }
 
     public async Task StartGame(string gameId, string mode)
@@ -139,13 +138,17 @@ public class RacerHub : Hub
         }
     }
 
-    public void UpdateScore(string gameId, int playerId, int score)
+    public async Task UpdateScore(string gameId, int playerId, int score)
     {
         var lobby = lobbies[gameId];
         var player = lobby[playerId];
         player.score = score;
-        Console.WriteLine(player.score);
 
-        SyncPlayers(gameId);
+        await SyncPlayers(gameId);
+
+        System.Console.WriteLine(
+            "UpdateScore {0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
     }
 }

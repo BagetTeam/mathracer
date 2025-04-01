@@ -18,7 +18,8 @@ export type GameOpsAction =
       gameMode: GameMode;
     }
   | {
-      type: "createGame";
+      type: "createLobby";
+      host: Player;
     }
   | {
       type: "exitLobby";
@@ -38,6 +39,11 @@ export type GameOpsAction =
   | {
       type: "setEquations";
       equations: Equation[];
+    }
+  | {
+      type: "setScore";
+      playerId: number;
+      score: number;
     };
 
 export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -65,13 +71,10 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
         ...state,
         gameMode: action.gameMode,
       };
-    case "createGame":
+    case "createLobby":
       return {
         ...state,
-        currentPlayer: {
-          ...state.currentPlayer,
-          isHost: true,
-        },
+        currentPlayer: action.host,
       };
     case "exitLobby":
       return {
@@ -109,6 +112,26 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         equations: action.equations,
+      };
+
+    case "setScore":
+      return {
+        ...state,
+        currentPlayer:
+          action.playerId === state.currentPlayer.id
+            ? {
+                ...state.currentPlayer,
+                score: action.score,
+              }
+            : state.currentPlayer,
+        players: state.players.map((p) =>
+          p.id === action.playerId
+            ? {
+                ...p,
+                score: action.score,
+              }
+            : p,
+        ),
       };
   }
 }
