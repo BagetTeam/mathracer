@@ -233,7 +233,11 @@ function Lobby({
           )}
         </div>
 
-        <PlayerList players={players} currentPlayerId={currentPlayer.id} />
+        <PlayerList
+          players={players}
+          currentPlayerId={currentPlayer.id}
+          gameMode={selectedMode}
+        />
 
         {players.length < 2 && (
           <p className="text-muted-foreground mt-4 text-center text-sm">

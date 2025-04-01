@@ -1,18 +1,20 @@
 import React from "react";
 import { User } from "lucide-react";
-import { Player } from "@/types/game";
+import { GameMode, Player } from "@/types/game";
 import { cn } from "@/lib/utils";
 
 interface PlayerListProps {
   players: Player[];
   showScores?: boolean;
   currentPlayerId: number;
+  gameMode: GameMode;
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({
   players,
   showScores = false,
   currentPlayerId,
+  gameMode,
 }) => {
   // Sort players by score if showing scores
   const sortedPlayers = showScores
@@ -50,7 +52,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
           {showScores && (
             <div className="ml-auto flex items-center">
               <div className="text-xl font-bold">{player.score}</div>
-              <div className="text-muted-foreground ml-1 text-xs">pts</div>
+              <div className="text-muted-foreground ml-1 text-xs">
+                {gameMode.type === "equations" ? "s" : "pts"}
+              </div>
             </div>
           )}
         </div>

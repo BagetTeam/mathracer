@@ -64,6 +64,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
           players={sortedPlayers}
           showScores={true}
           currentPlayerId={currentPlayer.id}
+          gameMode={gameMode}
         />
       </div>
 

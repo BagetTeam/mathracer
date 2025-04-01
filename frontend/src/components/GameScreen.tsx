@@ -36,7 +36,6 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     });
 
     connection.on("SyncPlayers", (players: string) => {
-      console.log({ players });
       dispatch({
         type: "setPlayers",
         players: JSON.parse(players),
@@ -54,10 +53,13 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
 
   // Handle time-based game end
   useEffect(() => {
-    if (gameMode.type === "time" && timeElapsed === gameMode.count) {
+    if (
+      (gameMode.type === "time" && timeElapsed === gameMode.count) ||
+      (gameMode.type === "equations" && currentEquationIndex === gameMode.count)
+    ) {
       onGameEnd();
     }
-  }, [timeElapsed]);
+  }, [timeElapsed, currentEquationIndex]);
 
   useEffect(() => {
     if (countDown == 0) {
@@ -68,7 +70,16 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
   async function submitAnswer() {
     setCurrentEquationIndex(currentEquationIndex + 1);
 
-    const score = currentPlayer.score + 1;
+    let score = currentPlayer.score + 1;
+    console.log(score);
+    if (
+      gameMode.type === "equations" &&
+      currentEquationIndex === gameMode.count - 1
+    ) {
+      score = timeElapsed;
+      console.log(score);
+      console.log("SHOULD BE DONE HERE HELLOOOO");
+    }
 
     dispatch({
       type: "setScore",
@@ -187,6 +198,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
               players={players}
               showScores
               currentPlayerId={currentPlayer.id}
+              gameMode={gameMode}
             />
           </div>
         </div>
