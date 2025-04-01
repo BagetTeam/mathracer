@@ -130,6 +130,10 @@
   @apply math-button bg-accent text-accent-foreground hover:bg-accent/90;
 }
 
+.math-button-destructive {
+  @apply math-button bg-destructive/70 text-primary-foreground hover:bg-destructive/90;
+}
+
 .equation-card {
   @apply flex items-center justify-center rounded-xl border border-gray-100 bg-white p-6 text-2xl font-medium shadow-sm transition-all duration-300;
 }

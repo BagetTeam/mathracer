@@ -86,7 +86,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             title="10 Second Sprint"
             description="Solve the most in 10 seconds"
             icon={<Timer size={24} />}
-            onClick={() => onSelectMode({ type: "time", seconds: 10 })}
+            onClick={() => onSelectMode({ type: "time", count: 10 * 10 })}
             bgColor="bg-math-blue"
           />
 
@@ -94,7 +94,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             title="30 Second Challenge"
             description="Solve the most in 30 seconds"
             icon={<Timer size={24} />}
-            onClick={() => onSelectMode({ type: "time", seconds: 30 })}
+            onClick={() => onSelectMode({ type: "time", count: 30 * 10 })}
             bgColor="bg-math-blue"
           />
         </div>

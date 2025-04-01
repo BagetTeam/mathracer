@@ -5,7 +5,7 @@ import JoinGameScreen from "@/components/JoinGameScreen";
 import LobbyScreen from "@/components/LobbyScreen";
 import MainMenu from "@/components/MainMenu";
 import ResultsScreen from "@/components/ResultsScreen";
-import { GameMode, GameState, Player } from "@/types/game";
+import { GameMode, GameState, Player, Equation } from "@/types/game";
 import { useMemo, useReducer, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import * as signalR from "@microsoft/signalr";
@@ -41,7 +41,8 @@ export default function Page() {
     gameId: gameId,
     currentPlayer,
     players: [],
-    gameMode: { type: "time", seconds: 10 },
+    gameMode: { type: "time", count: 100 },
+    equations: [],
   });
 
   return (
@@ -107,7 +108,7 @@ export default function Page() {
               <GameScreen
                 {...gameOps}
                 onGameEnd={() => setScreen("results")}
-                equations={[]}
+                dispatch={dispatch}
               />
             );
           case "results":
@@ -130,6 +131,7 @@ export type GameOps = {
   players: Player[];
   gameMode: GameMode;
   gameId: string;
+  equations: Equation[];
 };
 
 export type GameOpsAction =
@@ -158,6 +160,10 @@ export type GameOpsAction =
   | {
       type: "setCurrentPlayer";
       player: Player;
+    }
+  | {
+      type: "setEquations";
+      equations: Equation[];
     };
 
 function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -166,6 +172,9 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         currentPlayer: action.player,
+        players: state.players.map((p) =>
+          p.id === state.currentPlayer.id ? action.player : p,
+        ),
       };
     case "addPlayer":
       return {
@@ -220,6 +229,12 @@ function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
               }
             : p,
         ),
+      };
+    case "setEquations":
+      console.log("Setting equations:", action.equations);
+      return {
+        ...state,
+        equations: action.equations,
       };
   }
 }

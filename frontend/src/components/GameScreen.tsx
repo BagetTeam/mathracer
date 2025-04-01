@@ -1,37 +1,60 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ActionDispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Player, GameMode, Equation } from "@/types/game";
 import PlayerList from "./PlayerList";
 import EquationStack from "./EquationStack";
+import { GameOpsAction } from "@/app/page";
 
 interface GameScreenProps {
   currentPlayer: Player;
   players: Player[];
   gameMode: GameMode;
-  onGameEnd: () => void;
+  gameId: string;
   equations: Equation[];
+  onGameEnd: () => void;
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({
   currentPlayer,
   players,
   gameMode,
-  onGameEnd,
+  gameId,
   equations,
+  onGameEnd,
+  dispatch,
 }) => {
   const [answer, setAnswer] = useState("");
+  const [boxStyle, setBoxStyle] = useState("math-button-primary");
+  const [formStyle, setFormStyle] = useState("bg-background/70");
+
   const [animation, setAnimation] = useState("");
+  const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentEquationIndex = 0;
-  const timeRemaining = 0;
+  const timeRemaining = gameMode.count / 10;
 
   function onSubmitAnswer(number: number) {
-    console.log(number);
+    if (number == equations[currentEquationIndex].answer) {
+      setCurrentEquationIndex(currentEquationIndex + 1);
+      dispatch({
+        type: "setCurrentPlayer",
+        player: {
+          ...currentPlayer,
+          score: currentPlayer.score + 1,
+        },
+      });
+      setAnswer("");
+      console.log(currentPlayer.score);
+      console.log("=++_+-+__++_-+=-_+-+_+_+-+-=+_-_++_-+_+_+_=-=-=-+_");
+    } else {
+      setBoxStyle("math-button-destructive");
+      setFormStyle("bg-destructive/70");
+    }
   }
 
   // Focus input when component mounts and after each equation
@@ -53,10 +76,29 @@ const GameScreen: React.FC<GameScreenProps> = ({
     if (answer.trim()) {
       onSubmitAnswer(Number(answer));
       setAnswer("");
+      setBoxStyle("math-button-primary");
+      setFormStyle("bg-background/70");
 
       // Add animation for feedback
       setAnimation("animate-scale-in");
       setTimeout(() => setAnimation(""), 300);
+    }
+  };
+
+  const isAnswer = (e: string) => {
+    setAnswer(e);
+    console.log(boxStyle);
+    if (e.length >= equations[currentEquationIndex].answer.toString().length) {
+      if (e.trim()) {
+        onSubmitAnswer(Number(e));
+
+        // Add animation for feedback
+        setAnimation("animate-scale-in");
+        setTimeout(() => setAnimation(""), 300);
+      }
+    } else {
+      setBoxStyle("math-button-primary");
+      setFormStyle("bg-background/70");
     }
   };
 
@@ -65,7 +107,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
     if (gameMode.type === "equations") {
       return (currentEquationIndex / gameMode.count) * 100;
     } else if (gameMode.type === "time" && timeRemaining !== undefined) {
-      return ((gameMode.seconds - timeRemaining) / gameMode.seconds) * 100;
+      return (
+        ((gameMode.count / 10 - timeRemaining) / gameMode.count / 10) * 100
+      );
     }
     return 0;
   };
@@ -91,7 +135,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
             <div className="text-muted-foreground text-sm">
               {gameMode.type === "equations"
                 ? `First to ${gameMode.count}`
-                : `${gameMode.seconds}s Challenge`}
+                : `${gameMode.count / 10}s Challenge`}
             </div>
           </div>
           {/* <Progress value={calculateProgress()} className="h-2" /> */}
@@ -100,28 +144,28 @@ const GameScreen: React.FC<GameScreenProps> = ({
         <div className="mb-8 flex flex-grow flex-col items-center justify-center">
           <div className={`mb-6 w-full ${animation}`}>
             <EquationStack
-              equations={equations.slice(currentEquationIndex)}
-              currentIndex={0}
+              equations={equations}
+              currentIndex={currentEquationIndex}
               stackSize={3}
             />
           </div>
 
           <form
             onSubmit={handleSubmit}
-            className="flex w-full max-w-xs flex-col items-center"
+            className={`flex w-full max-w-xs flex-col items-center`}
           >
             <Input
               ref={inputRef}
               type="number"
               value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              onChange={(e) => isAnswer(e.target.value)}
               placeholder="Enter your answer"
-              className="mb-4 h-14 text-center text-xl"
+              className={`mb-4 h-14 text-center text-xl ${formStyle}`}
               autoComplete="off"
             />
             <Button
               type="submit"
-              className="math-button-primary w-full"
+              className={`w-full ${boxStyle}`}
               disabled={!answer.trim()}
             >
               Submit

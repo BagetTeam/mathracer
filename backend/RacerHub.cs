@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
 namespace hub;
@@ -11,22 +12,31 @@ public class RacerHub : Hub
 
     private static Dictionary<string, Game> games = new Dictionary<string, Game>();
 
-    public async void syncPlayers(string gameId)
+    public async void SyncPlayers(string gameId)
     {
         Dictionary<int, Player> lobby = lobbies[gameId];
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
     }
 
-    public async Task JoinLobby(string gameId, string name, GameMode selectedMode)
+    public async Task SyncEquations(string gameId) {
+        Game game = games[gameId];
+        string json = JsonSerializer.Serialize(game.equations);
+        await Clients.Groups(gameId).SendAsync("SyncEquations", json);
+    }
+
+
+    public async Task JoinLobby(string gameId, string name, string mode)
     {
         Player currentPlayer = new Player(name);
+
+        GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
 
         if (!lobbies.ContainsKey(gameId))
         {
             lobbies.Add(gameId, new Dictionary<int, Player>());
             currentPlayer.isHost = true;
-            await GenerateEquations(gameId, selectedMode.type, selectedMode.count);
+            await GenerateEquations(gameId, selectedMode);
         }
 
         Dictionary<int, Player> lobby = lobbies[gameId];
@@ -45,8 +55,8 @@ public class RacerHub : Hub
             .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        syncPlayers(gameId);
-
+        SyncPlayers(gameId);
+        await SyncEquations(gameId);
         Console.WriteLine($"Equations for game {gameId}:");
         foreach (Equation eq in games[gameId].equations)
         {
@@ -74,7 +84,7 @@ public class RacerHub : Hub
         // TODO: change host if host leaves
         // if (p.isHost) {}
 
-        syncPlayers(gameId);
+        SyncPlayers(gameId);
     }
 
     private int GetRandomInt(int min, int max) {
@@ -82,66 +92,68 @@ public class RacerHub : Hub
         return random.Next(min, max + 1);
     }
 
-    private int GenerateId() {
-        return 0; //TODO
-    }
+    // private int GenerateId() {
+    //     Random rnd = new Random();
+    //     return rnd.NextDouble(); //TODO
+    // }
 
-    private Equation GenerateAddition() {
+    private Equation GenerateAddition(int id) {
         int num1 = GetRandomInt(1, 20);
         int num2 = GetRandomInt(1, 20);
-        return new Equation(GenerateId(), $"{num1} + {num2} = ?", num1 + num2);
+        return new Equation(id, $"{num1} + {num2} = ?", num1 + num2);
     }
 
-    private Equation GenerateSubtraction() {
+    private Equation GenerateSubtraction(int id) {
         int answer = GetRandomInt(1, 20);
         int num2 = GetRandomInt(1, 10);
         int num1 = answer + num2;
-        return new Equation(GenerateId(), $"{num1} - {num2} = ?", answer);
+        return new Equation(id, $"{num1} - {num2} = ?", answer);
     }
 
-    private Equation GenerateMultiplication() {
+    private Equation GenerateMultiplication(int id) {
         int num1 = GetRandomInt(1, 12);
         int num2 = GetRandomInt(1, 12);
-        return new Equation(GenerateId(), $"{num1} × {num2} = ?", num1 * num2);
+        return new Equation(id, $"{num1} × {num2} = ?", num1 * num2);
     }
 
-    private Equation GenerateDivision() {
+    private Equation GenerateDivision(int id) {
         int answer = GetRandomInt(1, 10);
         int num2 = GetRandomInt(1, 10);
         int num1 = answer * num2;
-        return new Equation(GenerateId(), $"{num1} ÷ {num2} = ?", answer);
+        return new Equation(id, $"{num1} ÷ {num2} = ?", answer);
     }
 
-    private Equation GenerateEquation() {
+    private Equation GenerateEquation(int id) {
         int operationType = GetRandomInt(1, 5);
         switch (operationType) {
         case 1:
-            return GenerateAddition();
+            return GenerateAddition(id);
         case 2:
-            return GenerateSubtraction();
+            return GenerateSubtraction(id);
         case 3:
-            return GenerateMultiplication();
+            return GenerateMultiplication(id);
         case 4:
-            return GenerateDivision();
+            return GenerateDivision(id);
         default:
-            return GenerateAddition();
+            return GenerateAddition(id);
         }
     }
     public Equation[] GenerateAllEquations(int count) {
         Equation[] equations = new Equation[count];
         for (int i = 0; i < count; i++) {
-            equations[i] = GenerateEquation();
+            equations[i] = GenerateEquation(i);
         }
         return equations;
     }
-    public async Task GenerateEquations(string gameId, string mode, int count) 
+    public async Task GenerateEquations(string gameId, GameMode selectedMode) 
     { 
-        Equation[] equations = GenerateAllEquations(count);
-        Game game = new Game(){id = gameId, equations = equations, gameMode = new GameMode(mode, count)};
+        Equation[] equations = GenerateAllEquations(selectedMode.count);
+        Game game = new Game(gameId, new GameMode(selectedMode.type, selectedMode.count), equations);
         Dictionary<int, Player> lobby = lobbies[gameId];
         games.Add(gameId, game);
+        
+        await SyncEquations(gameId);
     }
-    
 }
 
 public class Player
@@ -188,4 +200,10 @@ public class Game {
     public string id {get; set;}
     public GameMode gameMode {get; set;}
     public Equation[] equations {get; set;}
+
+    public Game(string id, GameMode gameMode, Equation[] equations) {
+        this.id = id;
+        this.gameMode = gameMode;
+        this.equations = equations;
+    }
 }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
 //import { toast } from "@/lib/toast";
 import PlayerList from "./PlayerList";
-import { Player, GameMode } from "@/types/game";
+import { Player, GameMode, Equation } from "@/types/game";
 import * as signalR from "@microsoft/signalr";
 import { GameOpsAction } from "@/app/page";
 
@@ -115,7 +115,7 @@ function Lobby({
       });
     });
 
-    connection.on("AddUnloadEvenListener", (player: string) => {
+    connection.on("AddUnloadEventListener", (player: string) => {
       const p: Player = JSON.parse(player);
 
       const f = async () => {
@@ -131,30 +131,29 @@ function Lobby({
       });
     });
 
+    connection.on("SyncEquations", (equations: string) => {
+      console.log("Raw equations data:", equations);
+      dispatch({
+        type: "setEquations",
+        equations: JSON.parse(equations),
+      });
+    });
+
     connection
       .start()
       .then(() => {
-        connection.send("JoinLobby", gameId, currentPlayer.name);
+        connection.send(
+          "JoinLobby",
+          gameId,
+          currentPlayer.name,
+          JSON.stringify(selectedMode),
+        );
       })
       .catch();
 
     return () => {
       connection.stop();
     };
-  }, []);
-
-  useEffect(() => {
-    async function init() {
-      const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5103/hub")
-        .build();
-
-      await connection.start();
-
-      await connection.send("JoinLobby", gameId);
-    }
-
-    init();
   }, []);
 
   const copyInviteLink = () => {
@@ -184,7 +183,7 @@ function Lobby({
     if (selectedMode.type === "equations") {
       return `First to solve ${selectedMode.count} equations wins`;
     } else {
-      return `Solve the most equations in ${selectedMode.seconds} seconds`;
+      return `Solve the most equations in ${selectedMode.count / 10} seconds`;
     }
   };
 

@@ -8,12 +8,22 @@ export interface Player {
 
 export interface Equation {
   id: string;
-  question: string;
+  equation: string;
   answer: number;
 }
 
-export type GameMode =
-  | { type: "equations"; count: number }
-  | { type: "time"; seconds: number };
+export interface GameMode {
+  type: string;
+  count: number;
+}
+// export type GameMode =
+//   | { type: "equations"; count: number }
+//   | { type: "time"; seconds: number };
 
 export type GameState = "menu" | "joining" | "lobby" | "playing" | "results";
+
+export interface Game {
+  id: string;
+  gameMode: GameMode;
+  questions: Equation;
+}
