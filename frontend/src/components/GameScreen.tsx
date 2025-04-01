@@ -17,7 +17,7 @@ interface Props {
 }
 
 function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
-  const { gameMode, currentPlayer, players, equations } = gameOps;
+  const { gameMode, currentPlayer, players, equations, gameId } = gameOps;
 
   const [countDown, setCountDown] = useState(3);
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -36,6 +36,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     });
 
     connection.on("SyncPlayers", (players: string) => {
+      console.log({ players });
       dispatch({
         type: "setPlayers",
         players: JSON.parse(players),
@@ -70,16 +71,17 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     const score = currentPlayer.score + 1;
 
     dispatch({
-      type: "setCurrentPlayer",
-      player: {
-        ...currentPlayer,
-        score: score,
-      },
+      type: "setScore",
+      playerId: currentPlayer.id,
+      score,
     });
+
     inputRef.current.value = "";
 
+    console.log({ gameId, id: currentPlayer.id, score });
+
     await connection
-      .send("UpdateScore", gameOps.gameId, currentPlayer.id, score)
+      .send("UpdateScore", gameId, currentPlayer.id, score)
       .catch();
   }
 
@@ -89,8 +91,16 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
       setTimeout(() => setAnimation(""), 300);
       await submitAnswer();
     } else {
-      setBoxStyle("math-button-primary");
-      setFormStyle("bg-background/70");
+      if (
+        answer.length >=
+        equations[currentEquationIndex].answer.toString().length
+      ) {
+        setBoxStyle("math-button-destructive");
+        setFormStyle("bg-destructive/70");
+      } else {
+        setBoxStyle("math-button-primary");
+        setFormStyle("bg-background/70");
+      }
     }
   }
 
