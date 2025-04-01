@@ -28,7 +28,7 @@ public class GameMode
     public GameMode()
     {
         this.type = "time";
-        this.count = 100;
+        this.count = 10;
     }
 
     public GameMode(string type, int count)

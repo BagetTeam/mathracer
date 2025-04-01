@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Share2, Copy, Play, ArrowLeft } from "lucide-react";
 import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
-import { GameOpsAction } from "@/app/wrapper";
+import { GameOpsAction } from "@/app/gameOps";
 import { ConnectionContext } from "@/app/connectionContext";
 
 type LobbyScreenProps = LobbyProps;
@@ -68,6 +68,7 @@ function SetName({ dispatch, setShowNameDialogue }: SetNameProps) {
           id="name"
           name="name"
           type="text"
+          autoFocus
         />
         <div className="bg-secondary h-0.5 w-full rounded-full" />
         <Button className="mt-2 w-full" type="submit">

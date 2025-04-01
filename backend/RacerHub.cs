@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Timers;
 using equation;
 using Microsoft.AspNetCore.SignalR;
 using models;
@@ -89,6 +88,7 @@ public class RacerHub : Hub
     public async Task StartGame(string gameId, string mode)
     {
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
+        Console.WriteLine(selectedMode.count);
         Equation[] equations = Equation.GenerateAllEquations(selectedMode.count);
 
         await Clients
@@ -99,7 +99,7 @@ public class RacerHub : Hub
 
         int count = 3;
         DateTime now = DateTime.Now;
-        int elapsed = 0;
+        int elapsed = 1;
         while (count >= 0)
         {
             if (elapsed >= 1)
@@ -116,5 +116,27 @@ public class RacerHub : Hub
 
         System.Console.WriteLine("Game started!!");
         await Clients.Groups(gameId).SendAsync("GameStart");
+
+        int time = 0;
+        elapsed = 0;
+        bool run = true;
+        while (run)
+        {
+            if (elapsed >= 1)
+            {
+                time++;
+                await Clients.Groups(gameId).SendAsync("TimeElapsed", time);
+                System.Console.WriteLine("{0} Seconds passed", time);
+                elapsed = 0;
+                now = DateTime.Now;
+            }
+
+            elapsed = (DateTime.Now - now).Seconds;
+
+            if (selectedMode.type == "time" && time > selectedMode.count)
+            {
+                run = false;
+            }
+        }
     }
 }

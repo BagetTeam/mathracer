@@ -78,6 +78,7 @@ public class Equation
         for (int i = 0; i < count; i++)
         {
             equations[i] = GenerateEquation();
+            equations[i].id = i;
         }
         return equations;
     }
