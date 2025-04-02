@@ -92,6 +92,18 @@ public class RacerHub : Hub
         await SyncPlayers(gameId);
     }
 
+    public async Task ClearStats(string gameId) {
+        Dictionary<int, Player> players = lobbies[gameId].players;
+        
+        foreach (var player in players.Values) {
+            player.hasComplete = false;
+            player.progress = 0;
+            player.score = 0;
+        }
+        
+        await SyncPlayers(gameId);
+    }
+
     public async Task StartGame(string gameId, string mode)
     {
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;

@@ -91,15 +91,20 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     .catch();
                 }}
                 onStartGame={() => {
-                  withConnection(async (c) => {
-                    await c
-                      .send(
-                        "StartGame",
-                        gameId,
-                        JSON.stringify(gameOps.gameMode),
-                      )
-                      .catch();
-                  });
+                  connection
+                    .send("ClearStats", gameOps.gameId)
+                    .then(() => {
+                      withConnection(async (c) => {
+                        await c
+                          .send(
+                            "StartGame",
+                            gameId,
+                            JSON.stringify(gameOps.gameMode),
+                          )
+                          .catch();
+                      }).catch();
+                    })
+                    .catch();
                 }}
                 players={gameOps.players}
                 gameId={gameOps.gameId}
@@ -124,7 +129,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 players={gameOps.players}
                 gameMode={gameOps.gameMode}
                 onBackToMenu={() => setScreen("menu")}
-                onPlayAgain={() => setScreen("playing")}
+                onPlayAgain={() => setScreen("lobby")}
                 dispatch={dispatch}
               />
             );

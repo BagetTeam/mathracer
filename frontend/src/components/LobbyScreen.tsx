@@ -7,6 +7,7 @@ import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
 import { GameOpsAction } from "@/app/gameOps";
 import { ConnectionContext } from "@/app/connectionContext";
+import { boolean } from "zod";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -23,7 +24,7 @@ function LobbyScreen({
 
   return (
     <div className="animate-fade-in flex max-w-2xl flex-col items-center justify-center space-y-6">
-      {showNameDialogue ? (
+      {showNameDialogue && !currentPlayer.hasComplete ? (
         <SetName
           dispatch={dispatch}
           setShowNameDialogue={setShowNameDialogue}
@@ -133,15 +134,17 @@ function Lobby({
 
     console.log(selectedMode);
 
-    connection
-      .send(
-        "JoinLobby",
-        gameId,
-        currentPlayer.name,
-        selectedMode.type,
-        selectedMode.count,
-      )
-      .catch();
+    if (!currentPlayer.hasComplete) {
+      connection
+        .send(
+          "JoinLobby",
+          gameId,
+          currentPlayer.name,
+          selectedMode.type,
+          selectedMode.count,
+        )
+        .catch();
+    }
 
     return () => {
       connection.off("SyncPlayers");
@@ -174,7 +177,9 @@ function Lobby({
       copyInviteLink();
     }
   };
-
+  const canStart = (): boolean => {
+    return !players.some((p) => !p.hasComplete);
+  };
   // Display game mode info
   const getModeDescription = () => {
     if (selectedMode.type === "equations") {
@@ -237,7 +242,7 @@ function Lobby({
       <div className="w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Players ({players.length})</h2>
-          {currentPlayer.isHost && players.length > 1 && (
+          {currentPlayer.isHost && players.length > 1 && canStart() && (
             <Button
               onClick={async () => {
                 onStartGame();
@@ -256,7 +261,7 @@ function Lobby({
           gameMode={selectedMode}
         />
 
-        {players.length < 2 && (
+        {(players.length < 2 || !canStart()) && (
           <p className="text-muted-foreground mt-4 text-center text-sm">
             Waiting for more players to join...
           </p>
