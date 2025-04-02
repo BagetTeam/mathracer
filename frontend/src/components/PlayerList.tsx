@@ -8,6 +8,7 @@ interface PlayerListProps {
   showScores?: boolean;
   currentPlayerId: number;
   gameMode: GameMode;
+  //isResults: boolean;
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({
@@ -15,11 +16,21 @@ const PlayerList: React.FC<PlayerListProps> = ({
   showScores = false,
   currentPlayerId,
   gameMode,
+  //isResults = false
 }) => {
   // Sort players by score if showing scores
-  const sortedPlayers = showScores
-    ? [...players].sort((a, b) => b.score - a.score)
-    : players;
+  const sortedPlayers =
+    gameMode.type === "equations"
+      ? [...players].sort((a, b) => {
+          if (a.hasComplete && !b.hasComplete) return -1;
+          if (!a.hasComplete && b.hasComplete) return 1;
+
+          if (a.hasComplete && b.hasComplete) {
+            return a.score - b.score;
+          }
+          return b.score - a.score;
+        })
+      : [...players].sort((a, b) => b.score - a.score);
 
   return (
     <div className="space-y-2">
@@ -53,7 +64,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
             <div className="ml-auto flex items-center">
               <div className="text-xl font-bold">{player.score}</div>
               <div className="text-muted-foreground ml-1 text-xs">
-                {gameMode.type === "equations" ? "s" : "pts"}
+                {gameMode.type === "equations" && player.hasComplete
+                  ? "s"
+                  : "pts"}
               </div>
             </div>
           )}

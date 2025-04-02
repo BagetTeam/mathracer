@@ -4,6 +4,7 @@ export interface Player {
   score: number;
   isHost: boolean;
   progress: number;
+  hasComplete: boolean;
 }
 
 export interface Equation {

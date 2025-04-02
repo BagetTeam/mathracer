@@ -10,6 +10,8 @@ public class Player
     public bool isHost { get; set; }
     public string name { get; set; }
 
+    public bool hasComplete {get; set;}
+
     public Player(string name)
     {
         id = 0;
@@ -17,6 +19,7 @@ public class Player
         score = 0;
         isHost = false;
         this.name = name;
+        hasComplete = false;
     }
 }
 
@@ -49,5 +52,20 @@ public class Game
         this.id = id;
         this.gameMode = gameMode;
         this.equations = eq;
+    }
+}
+
+public class Lobby {
+    public Dictionary<int, Player> players {get; set;}
+    public GameMode gameMode {get; set;}
+
+    public Lobby() {
+        players = new Dictionary<int, Player>();
+        gameMode = new GameMode();
+    }
+
+    public Lobby(string mode, int count) {
+        players = new Dictionary<int, Player>();
+        gameMode = new GameMode(mode, count);
     }
 }

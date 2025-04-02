@@ -7,27 +7,28 @@ namespace hub;
 
 public class RacerHub : Hub
 {
-    private static Dictionary<string, Dictionary<int, Player>> lobbies =
-        new Dictionary<string, Dictionary<int, Player>>();
+    private static Dictionary<string, Lobby> lobbies =
+        new Dictionary<string, Lobby>();
 
     private async Task SyncPlayers(string gameId)
     {
-        Dictionary<int, Player> lobby = lobbies[gameId];
+        Dictionary<int, Player> lobby = lobbies[gameId].players;
         string json = JsonSerializer.Serialize(lobby.Values);
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
     }
 
-    public async Task JoinLobby(string gameId, string name)
+    public async Task JoinLobby(string gameId, string name, string mode, int count)
     {
         Player currentPlayer = new Player(name);
 
         if (!lobbies.ContainsKey(gameId))
         {
-            lobbies.Add(gameId, new Dictionary<int, Player>());
+            lobbies.Add(gameId, new Lobby(mode, count));
             currentPlayer.isHost = true;
         }
 
-        Dictionary<int, Player> lobby = lobbies[gameId];
+        Dictionary<int, Player> lobby = lobbies[gameId].players;
+        GameMode gameMode = lobbies[gameId].gameMode;
 
         currentPlayer.id = lobby.Count + 1;
 
@@ -41,6 +42,10 @@ public class RacerHub : Hub
         await Clients
             .Client(Context.ConnectionId)
             .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
+
+         await Clients
+            .Client(Context.ConnectionId)
+            .SendAsync("SetGameMode", JsonSerializer.Serialize(gameMode));
 
         await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
         await SyncPlayers(gameId);
@@ -63,7 +68,7 @@ public class RacerHub : Hub
             return;
         }
 
-        var lobby = lobbies[gameId];
+        var lobby = lobbies[gameId].players;
 
         if (!lobby.ContainsKey(id))
         {
@@ -116,10 +121,10 @@ public class RacerHub : Hub
 
         await Clients.Groups(gameId).SendAsync("GameStart");
 
-        if (selectedMode.type != "time")
-        {
-            return;
-        }
+        // if (selectedMode.type != "time")
+        // {
+        //     return;
+        // }
 
         int time = 0;
         elapsed = 0;
@@ -145,7 +150,7 @@ public class RacerHub : Hub
 
     public async Task UpdateScore(string gameId, int playerId, int score)
     {
-        var lobby = lobbies[gameId];
+        var lobby = lobbies[gameId].players;
         var player = lobby[playerId];
         player.score = score;
 
@@ -153,6 +158,19 @@ public class RacerHub : Hub
 
         System.Console.WriteLine(
             "UpdateScore {0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
+    }
+
+    public async Task UpdatePlayerState(string gameId, int playerId, bool hasComplete) {
+        var lobby = lobbies[gameId].players;
+        var player = lobby[playerId];
+        player.hasComplete = hasComplete;
+
+        await SyncPlayers(gameId);
+
+        System.Console.WriteLine(
+            "UpdateState {0}",
             JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
         );
     }

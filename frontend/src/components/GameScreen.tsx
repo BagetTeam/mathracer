@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, use, ActionDispatch } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  use,
+  ActionDispatch,
+  useMemo,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PlayerList from "./PlayerList";
@@ -9,6 +16,7 @@ import EquationStack from "./EquationStack";
 import { GameOps, GameOpsAction } from "@/app/gameOps";
 import { Progress } from "./ui/progress";
 import { ConnectionContext } from "@/app/connectionContext";
+import { GameMode } from "@/types/game";
 
 interface Props {
   gameOps: GameOps;
@@ -29,6 +37,8 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
   const [animation, setAnimation] = useState("");
   const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null!);
+
+  const now = useMemo(() => Math.round(Date.now() / 1000), []);
 
   useEffect(() => {
     connection.on("CountDown", (count: number) => {
@@ -57,7 +67,18 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
       (gameMode.type === "time" && timeElapsed === gameMode.count) ||
       (gameMode.type === "equations" && currentEquationIndex === gameMode.count)
     ) {
-      onGameEnd();
+      async function setPlayerComplete() {
+        dispatch({
+          type: "isComplete",
+          playerId: currentPlayer.id,
+          hasComplete: true,
+        });
+
+        await connection
+          .send("UpdatePlayerState", gameId, currentPlayer.id, true)
+          .catch();
+      }
+      setPlayerComplete().then(() => onGameEnd());
     }
   }, [timeElapsed, currentEquationIndex]);
 
@@ -76,7 +97,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
       gameMode.type === "equations" &&
       currentEquationIndex === gameMode.count - 1
     ) {
-      score = timeElapsed;
+      score = Math.round(Date.now() / 1000) - now;
       console.log(score);
       console.log("SHOULD BE DONE HERE HELLOOOO");
     }

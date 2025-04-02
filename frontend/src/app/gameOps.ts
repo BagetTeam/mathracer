@@ -44,6 +44,11 @@ export type GameOpsAction =
       type: "setScore";
       playerId: number;
       score: number;
+    }
+  | {
+      type: "isComplete";
+      playerId: number;
+      hasComplete: boolean;
     };
 
 export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -129,6 +134,26 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
             ? {
                 ...p,
                 score: action.score,
+              }
+            : p,
+        ),
+      };
+
+    case "isComplete":
+      return {
+        ...state,
+        currentPlayer:
+          action.playerId === state.currentPlayer.id
+            ? {
+                ...state.currentPlayer,
+                hasComplete: action.hasComplete,
+              }
+            : state.currentPlayer,
+        players: state.players.map((p) =>
+          p.id === action.playerId
+            ? {
+                ...p,
+                hasComplete: action.hasComplete,
               }
             : p,
         ),

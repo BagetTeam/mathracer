@@ -23,6 +23,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
     score: 0,
     isHost: false,
     progress: 0,
+    hasComplete: false,
   };
 
   const [screen, setScreen] = useState<GameState>(isJoining ? "lobby" : "menu");
@@ -124,6 +125,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 gameMode={gameOps.gameMode}
                 onBackToMenu={() => setScreen("menu")}
                 onPlayAgain={() => setScreen("playing")}
+                dispatch={dispatch}
               />
             );
         }

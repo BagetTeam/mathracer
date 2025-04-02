@@ -108,6 +108,13 @@ function Lobby({
       });
     });
 
+    connection.on("SetGameMode", (mode: string) => {
+      dispatch({
+        type: "setGameMode",
+        gameMode: JSON.parse(mode),
+      });
+    });
+
     connection.on("AddUnloadEventListener", (player: string) => {
       const p: Player = JSON.parse(player);
 
@@ -124,7 +131,17 @@ function Lobby({
       });
     });
 
-    connection.send("JoinLobby", gameId, currentPlayer.name).catch();
+    console.log(selectedMode);
+
+    connection
+      .send(
+        "JoinLobby",
+        gameId,
+        currentPlayer.name,
+        selectedMode.type,
+        selectedMode.count,
+      )
+      .catch();
 
     return () => {
       connection.off("SyncPlayers");

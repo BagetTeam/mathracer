@@ -1,8 +1,11 @@
-import React from "react";
+import React, { ActionDispatch, use, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, RotateCcw, Home } from "lucide-react";
 import { Player, GameMode } from "@/types/game";
 import PlayerList from "./PlayerList";
+import { connection } from "next/server";
+import { ConnectionContext } from "@/app/connectionContext";
+import { GameOpsAction } from "@/app/gameOps";
 
 interface ResultsScreenProps {
   players: Player[];
@@ -10,6 +13,7 @@ interface ResultsScreenProps {
   onPlayAgain: () => void;
   onBackToMenu: () => void;
   currentPlayer: Player;
+  dispatch: ActionDispatch<[action: GameOpsAction]>;
 }
 
 const ResultsScreen: React.FC<ResultsScreenProps> = ({
@@ -18,13 +22,45 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   onPlayAgain,
   onBackToMenu,
   currentPlayer,
+  dispatch,
 }) => {
   // Get the winner(s) - could be multiple in case of tie
-  const highestScore = Math.max(...players.map((player) => player.score));
-  const winners = players.filter((player) => player.score === highestScore);
+  const highestScore =
+    gameMode.type === "equations"
+      ? Math.min(
+          ...players.map((player) =>
+            player.hasComplete ? player.score : Infinity,
+          ),
+        )
+      : Math.max(...players.map((player) => player.score));
+  const winners = players.filter(
+    (player) => player.score === highestScore && player.hasComplete,
+  );
 
   // For display, sort players by score (highest first)
-  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const sortedPlayers =
+    gameMode.type === "equations"
+      ? [...players].sort((a, b) => {
+          if (a.hasComplete && !b.hasComplete) return -1;
+          if (!a.hasComplete && b.hasComplete) return 1;
+
+          if (a.hasComplete && b.hasComplete) {
+            return a.score - b.score;
+          }
+          return b.score - a.score;
+        })
+      : [...players].sort((a, b) => b.score - a.score);
+
+  const connection = use(ConnectionContext)!;
+
+  useEffect(() => {
+    connection.on("SyncPlayers", (players: string) => {
+      dispatch({
+        type: "setPlayers",
+        players: JSON.parse(players),
+      });
+    });
+  }, []);
 
   return (
     <div className="animate-fade-in mx-auto max-w-xl space-y-8">
@@ -53,8 +89,17 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         )}
 
         <div className="text-lg">
-          With <span className="font-bold">{highestScore}</span> equations
-          solved
+          {gameMode.type === "equations" ? (
+            <>
+              Solving {gameMode.count} equations in{" "}
+              <span className="font-bold">{highestScore}</span> seconds
+            </>
+          ) : (
+            <>
+              With <span className="font-bold">{highestScore}</span> equations
+              solved
+            </>
+          )}
         </div>
       </div>
 
