@@ -43,10 +43,43 @@ export default function Wrapper({ gameId, isJoining }: Props) {
       setScreen("playing");
     });
 
+    connection.on("SyncPlayers", (players: string) => {
+      dispatch({
+        type: "setPlayers",
+        players: JSON.parse(players),
+      });
+    });
+
     return () => {
       connection.off("StartCountdown");
+      connection.off("SyncPlayers");
     };
   }, []);
+
+  async function play() {
+    await connection
+      .send("ClearStats", gameOps.gameId)
+      .then(() => {
+        withConnection(async (c) => {
+          await c
+            .send("StartGame", gameId, JSON.stringify(gameOps.gameMode))
+            .catch();
+        }).catch();
+      })
+      .catch();
+
+    setScreen("playing");
+  }
+
+  async function exitLobby() {
+    dispatch({ type: "exitLobby" });
+
+    await connection
+      .send("RemovePlayer", gameOps.gameId, gameOps.currentPlayer.id)
+      .catch();
+
+    setScreen("menu");
+  }
 
   return (
     <main className="flex h-full w-full items-center justify-center">
@@ -73,22 +106,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     )
                     .catch();
 
-                  await connection
-                    .send("ClearStats", gameOps.gameId)
-                    .then(() => {
-                      withConnection(async (c) => {
-                        await c
-                          .send(
-                            "StartGame",
-                            gameId,
-                            JSON.stringify(gameOps.gameMode),
-                          )
-                          .catch();
-                      }).catch();
-                    })
-                    .catch();
-
-                  setScreen("playing");
+                  await play();
                 }}
               />
             );
@@ -106,34 +124,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
             return (
               <LobbyScreen
                 dispatch={dispatch}
-                onBackToMenu={async () => {
-                  dispatch({ type: "exitLobby" });
-                  setScreen("menu");
-
-                  await connection
-                    .send(
-                      "RemovePlayer",
-                      gameOps.gameId,
-                      gameOps.currentPlayer.id,
-                    )
-                    .catch();
-                }}
-                onStartGame={async () => {
-                  await connection
-                    .send("ClearStats", gameOps.gameId)
-                    .then(() => {
-                      withConnection(async (c) => {
-                        await c
-                          .send(
-                            "StartGame",
-                            gameId,
-                            JSON.stringify(gameOps.gameMode),
-                          )
-                          .catch();
-                      }).catch();
-                    })
-                    .catch();
-                }}
+                onBackToMenu={exitLobby}
+                onStartGame={play}
                 players={gameOps.players}
                 gameId={gameOps.gameId}
                 currentPlayer={gameOps.currentPlayer}
@@ -156,8 +148,14 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 currentPlayer={gameOps.currentPlayer}
                 players={gameOps.players}
                 gameMode={gameOps.gameMode}
-                onBackToMenu={() => setScreen("menu")}
-                onPlayAgain={() => setScreen("lobby")}
+                onBackToMenu={exitLobby}
+                onPlayAgain={() => {
+                  if (gameOps.players.length == 1) {
+                    play();
+                  } else {
+                    setScreen("lobby");
+                  }
+                }}
                 dispatch={dispatch}
               />
             );
