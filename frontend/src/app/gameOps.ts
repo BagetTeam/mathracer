@@ -88,13 +88,8 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
-        //players: state.players.map((p) => {
-        //  return {
-        //    ...p,
-        //    isHost: false,
-        //  };
-        //}),
         players: [],
+        gameId: crypto.randomUUID().toString(),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,
