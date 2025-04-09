@@ -19,7 +19,7 @@ public class Player
         score = 0;
         isHost = false;
         this.name = name;
-        hasComplete = false;
+        hasComplete = true;
     }
 }
 
