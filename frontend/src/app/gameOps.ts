@@ -96,6 +96,7 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,
+          hasComplete: false,
         },
       };
 
