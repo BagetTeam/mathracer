@@ -74,6 +74,9 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         players: action.players,
+        currentPlayer:
+          action.players.find((p) => p.id === state.currentPlayer.id) ??
+          state.currentPlayer,
       };
     case "setGameMode":
       return {
