@@ -101,13 +101,6 @@ function Lobby({
   const connection = use(ConnectionContext)!;
 
   useEffect(() => {
-    connection.on("SyncPlayers", (players: string) => {
-      dispatch({
-        type: "setPlayers",
-        players: JSON.parse(players),
-      });
-    });
-
     connection.on("SetGameMode", (mode: string) => {
       dispatch({
         type: "setGameMode",
@@ -144,7 +137,6 @@ function Lobby({
     }
 
     return () => {
-      connection.off("SyncPlayers");
       connection.off("AddUnloadEventListener");
     };
   }, []);

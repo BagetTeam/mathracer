@@ -51,17 +51,6 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         })
       : [...players].sort((a, b) => b.score - a.score);
 
-  const connection = use(ConnectionContext)!;
-
-  useEffect(() => {
-    connection.on("SyncPlayers", (players: string) => {
-      dispatch({
-        type: "setPlayers",
-        players: JSON.parse(players),
-      });
-    });
-  }, []);
-
   return (
     <div className="animate-fade-in mx-auto max-w-xl space-y-8">
       <div className="text-center">
