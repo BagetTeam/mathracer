@@ -10,6 +10,7 @@ import { use, useEffect, useReducer, useState } from "react";
 import { ConnectionContext } from "./connectionContext";
 import { gameOpsreducer } from "./gameOps";
 import { withConnection } from "@/utils/connection";
+import { useRouter } from "next/navigation";
 
 type Props = {
   gameId: string;
@@ -36,6 +37,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   });
 
   const connection = use(ConnectionContext)!;
+  const router = useRouter();
 
   useEffect(() => {
     connection.on("StartCountdown", (req: string) => {
@@ -73,6 +75,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
 
   async function exitLobby() {
     dispatch({ type: "exitLobby" });
+    router.push("/");
 
     await connection
       .send("RemovePlayer", gameOps.gameId, gameOps.currentPlayer.id)
