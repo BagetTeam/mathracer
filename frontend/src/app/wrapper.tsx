@@ -62,7 +62,32 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 onCreateGame={() => {
                   setScreen("lobby");
                 }}
-                onStartSinglePlayer={() => {
+                onStartSinglePlayer={async () => {
+                  await connection
+                    .send(
+                      "JoinLobby",
+                      gameId,
+                      gameOps.currentPlayer.name,
+                      gameOps.gameMode.type,
+                      gameOps.gameMode.count,
+                    )
+                    .catch();
+
+                  await connection
+                    .send("ClearStats", gameOps.gameId)
+                    .then(() => {
+                      withConnection(async (c) => {
+                        await c
+                          .send(
+                            "StartGame",
+                            gameId,
+                            JSON.stringify(gameOps.gameMode),
+                          )
+                          .catch();
+                      }).catch();
+                    })
+                    .catch();
+
                   setScreen("playing");
                 }}
               />
@@ -70,7 +95,10 @@ export default function Wrapper({ gameId, isJoining }: Props) {
           case "joining":
             return (
               <JoinGameScreen
-                onJoinGame={() => {}}
+                onJoinGame={(gameId) => {
+                  dispatch({ type: "setGameId", gameId });
+                  setScreen("lobby");
+                }}
                 onBackToMenu={() => setScreen("menu")}
               />
             );
@@ -78,11 +106,11 @@ export default function Wrapper({ gameId, isJoining }: Props) {
             return (
               <LobbyScreen
                 dispatch={dispatch}
-                onBackToMenu={() => {
+                onBackToMenu={async () => {
                   dispatch({ type: "exitLobby" });
                   setScreen("menu");
 
-                  connection
+                  await connection
                     .send(
                       "RemovePlayer",
                       gameOps.gameId,
@@ -90,8 +118,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     )
                     .catch();
                 }}
-                onStartGame={() => {
-                  connection
+                onStartGame={async () => {
+                  await connection
                     .send("ClearStats", gameOps.gameId)
                     .then(() => {
                       withConnection(async (c) => {
