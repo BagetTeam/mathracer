@@ -59,6 +59,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   }, []);
 
   async function play() {
+    console.log("gameOps.gameId:", gameOps.gameId);
+
     await connection
       .send("ClearStats", gameOps.gameId)
       .then(() => {
@@ -74,12 +76,14 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   }
 
   async function exitLobby() {
-    dispatch({ type: "exitLobby" });
-    router.push("/");
+    console.log("gameOps.gameId:", gameOps.gameId);
 
     await connection
       .send("RemovePlayer", gameOps.gameId, gameOps.currentPlayer.id)
       .catch();
+
+    dispatch({ type: "exitLobby" });
+    router.push("/");
 
     setScreen("menu");
   }
@@ -102,7 +106,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                   await connection
                     .send(
                       "JoinLobby",
-                      gameId,
+                      gameOps.gameId,
                       gameOps.currentPlayer.name,
                       gameOps.gameMode.type,
                       gameOps.gameMode.count,

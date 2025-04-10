@@ -84,14 +84,11 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     setCurrentEquationIndex(currentEquationIndex + 1);
 
     let score = currentPlayer.score + 1;
-    console.log(score);
     if (
       gameMode.type === "equations" &&
       currentEquationIndex === gameMode.count - 1
     ) {
       score = Math.round(Date.now() / 1000) - now;
-      console.log(score);
-      console.log("SHOULD BE DONE HERE HELLOOOO");
     }
 
     dispatch({
@@ -101,8 +98,6 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
     });
 
     inputRef.current.value = "";
-
-    console.log({ gameId, id: currentPlayer.id, score });
 
     await connection
       .send("UpdateScore", gameId, currentPlayer.id, score)
