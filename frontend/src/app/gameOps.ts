@@ -23,6 +23,7 @@ export type GameOpsAction =
     }
   | {
       type: "exitLobby";
+      players: Player[];
     }
   | {
       type: "nameChange";
@@ -70,6 +71,11 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         players: action.players,
+        currentPlayer: {
+          ...state.currentPlayer,
+          isHost: action.players.find((p) => p.id === state.currentPlayer.id)!
+            .isHost,
+        },
       };
     case "setGameMode":
       return {
@@ -84,12 +90,7 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
-        players: state.players.map((p) => {
-          return {
-            ...p,
-            isHost: false,
-          };
-        }),
+        players: action.players,
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,

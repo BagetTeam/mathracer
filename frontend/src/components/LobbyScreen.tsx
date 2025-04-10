@@ -86,7 +86,7 @@ type LobbyProps = {
   currentPlayer: Player;
   selectedMode: GameMode;
   onStartGame: () => void;
-  onBackToMenu: () => void;
+  onBackToMenu: (players: Player[]) => void;
   dispatch: ActionDispatch<[action: GameOpsAction]>;
 };
 function Lobby({
@@ -195,7 +195,7 @@ function Lobby({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onBackToMenu}
+          onClick={() => onBackToMenu(players)}
           className="mb-4 flex items-center gap-2"
         >
           <ArrowLeft size={16} />

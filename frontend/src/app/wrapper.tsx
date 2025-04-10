@@ -78,8 +78,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
             return (
               <LobbyScreen
                 dispatch={dispatch}
-                onBackToMenu={() => {
-                  dispatch({ type: "exitLobby" });
+                onBackToMenu={(players: Player[]) => {
+                  dispatch({ type: "exitLobby", players: players });
                   setScreen("menu");
 
                   connection
@@ -128,7 +128,18 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 currentPlayer={gameOps.currentPlayer}
                 players={gameOps.players}
                 gameMode={gameOps.gameMode}
-                onBackToMenu={() => setScreen("menu")}
+                onBackToMenu={(players: Player[]) => {
+                  dispatch({ type: "exitLobby", players: players });
+                  setScreen("menu");
+
+                  connection
+                    .send(
+                      "RemovePlayer",
+                      gameOps.gameId,
+                      gameOps.currentPlayer.id,
+                    )
+                    .catch();
+                }}
                 onPlayAgain={() => setScreen("lobby")}
                 dispatch={dispatch}
               />

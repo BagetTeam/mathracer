@@ -34,7 +34,7 @@ public class RacerHub : Hub
 
         while (lobby.ContainsKey(currentPlayer.id))
         {
-            currentPlayer.id = lobby.Count + 1;
+            currentPlayer.id++;
         }
 
         lobby.Add(currentPlayer.id, currentPlayer);
@@ -76,6 +76,7 @@ public class RacerHub : Hub
         }
 
         Player p = lobby[id];
+
         lobby.Remove(id);
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
@@ -86,8 +87,10 @@ public class RacerHub : Hub
             return;
         }
 
-        // TODO: change host if host leaves
-        // if (p.isHost) {}
+        if (p.isHost) {
+            Player nextPlayer = lobby.First().Value;
+            nextPlayer.isHost = true;
+        }
 
         await SyncPlayers(gameId);
     }
