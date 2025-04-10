@@ -151,11 +151,6 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
 
   return (
     <>
-      {countDown > 0 && (
-        <div className="absolute z-50 flex h-full w-full items-center justify-center">
-          {countDown}
-        </div>
-      )}
       <div className="animate-fade-in mx-auto flex h-full w-full max-w-5xl flex-col gap-6 lg:flex-row">
         {/* Main game area */}
         <div className="flex flex-grow flex-col lg:order-1">
@@ -171,8 +166,18 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
             <Progress value={calculateProgress()} className="h-2" />
           </div>
 
-          <div className="mb-8 flex flex-grow flex-col items-center justify-center">
-            <div className={`mb-6 w-full ${animation}`}>
+          <div className="mb-8 flex w-full flex-grow flex-col items-center justify-center">
+            {countDown > 0 && (
+              <div className="absolute z-50 flex h-full w-full items-center justify-center font-extrabold">
+                <div className="border-primary bg-secondary/10 flex h-[7rem] w-[7rem] items-center justify-center rounded-full border-[4px] border-solid text-6xl backdrop-blur-xs backdrop-filter">
+                  <span className="text-primary">{countDown}</span>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`mb-6 flex w-full items-center justify-center ${animation}`}
+            >
               <EquationStack
                 equations={equations}
                 currentIndex={currentEquationIndex}
@@ -186,7 +191,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
                 inputRef.current.value = "";
                 submitIfCorrect(inputRef.current.value);
               }}
-              className={`flex w-full max-w-xs flex-col items-center`}
+              className={`relative flex w-full max-w-xs flex-col items-center`}
             >
               <Input
                 ref={inputRef}
@@ -195,6 +200,7 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
                 placeholder="Enter your answer"
                 className={`mb-4 h-14 text-center text-xl ${formStyle}`}
                 autoComplete="off"
+                disabled={countDown > 0}
               />
               <Button type="submit" className={`w-full ${boxStyle}`}>
                 Submit

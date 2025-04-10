@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Equation } from "@/types/game";
@@ -19,8 +21,10 @@ const EquationStack: React.FC<EquationStackProps> = ({
     Math.min(currentIndex + stackSize, equations.length),
   );
 
+  let height = 0;
+
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2">
+    <div className="flex h-full w-full max-w-md flex-col items-center justify-center gap-1">
       {visibleEquations.map((equation, index) => {
         // First equation is the current one, others are upcoming
         const isCurrent = index === 0;
@@ -29,17 +33,15 @@ const EquationStack: React.FC<EquationStackProps> = ({
           <div
             key={equation.id}
             className={cn(
-              "equation-card w-full transition-all duration-300",
+              "equation-card w-full",
               "animate-fade-down",
               isCurrent
                 ? "z-10 scale-100 opacity-100"
-                : `opacity-${80 - index * 20} scale-${95 - index * 5} -mt-8 z-${10 - index}`,
+                : `opacity-${80 - index * 20}`,
             )}
             style={{
-              transform: isCurrent
-                ? "translateY(0)"
-                : `translateY(-${index * 0.5}rem)`,
               opacity: isCurrent ? 1 : Math.max(0.4, 1 - index * 0.2),
+              zIndex: -equation.id,
             }}
           >
             <span
