@@ -10,6 +10,7 @@ import { use, useEffect, useReducer, useState } from "react";
 import { ConnectionContext } from "./connectionContext";
 import { gameOpsreducer } from "./gameOps";
 import { withConnection } from "@/utils/connection";
+import { useRouter } from "next/navigation";
 
 type Props = {
   gameId: string;
@@ -36,6 +37,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   });
 
   const connection = use(ConnectionContext)!;
+  const router = useRouter();
 
   useEffect(() => {
     connection.on("StartCountdown", (req: string) => {
@@ -43,10 +45,44 @@ export default function Wrapper({ gameId, isJoining }: Props) {
       setScreen("playing");
     });
 
+    connection.on("SyncPlayers", (players: string) => {
+      dispatch({
+        type: "setPlayers",
+        players: JSON.parse(players),
+      });
+    });
+
     return () => {
       connection.off("StartCountdown");
+      connection.off("SyncPlayers");
     };
   }, []);
+
+  async function play() {
+    await connection
+      .send("ClearStats", gameOps.gameId)
+      .then(() => {
+        withConnection(async (c) => {
+          await c
+            .send("StartGame", gameId, JSON.stringify(gameOps.gameMode))
+            .catch();
+        }).catch();
+      })
+      .catch();
+
+    setScreen("playing");
+  }
+
+  async function exitLobby() {
+    dispatch({ type: "exitLobby" });
+    router.push("/");
+
+    await connection
+      .send("RemovePlayer", gameOps.gameId, gameOps.currentPlayer.id)
+      .catch();
+
+    setScreen("menu");
+  }
 
   return (
     <main className="flex h-full w-full items-center justify-center">
@@ -62,15 +98,28 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 onCreateGame={() => {
                   setScreen("lobby");
                 }}
-                onStartSinglePlayer={() => {
-                  setScreen("playing");
+                onStartSinglePlayer={async () => {
+                  await connection
+                    .send(
+                      "JoinLobby",
+                      gameId,
+                      gameOps.currentPlayer.name,
+                      gameOps.gameMode.type,
+                      gameOps.gameMode.count,
+                    )
+                    .catch();
+
+                  await play();
                 }}
               />
             );
           case "joining":
             return (
               <JoinGameScreen
-                onJoinGame={() => {}}
+                onJoinGame={(gameId) => {
+                  dispatch({ type: "setGameId", gameId });
+                  setScreen("lobby");
+                }}
                 onBackToMenu={() => setScreen("menu")}
               />
             );
@@ -78,34 +127,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
             return (
               <LobbyScreen
                 dispatch={dispatch}
-                onBackToMenu={(players: Player[]) => {
-                  dispatch({ type: "exitLobby", players: players });
-                  setScreen("menu");
-
-                  connection
-                    .send(
-                      "RemovePlayer",
-                      gameOps.gameId,
-                      gameOps.currentPlayer.id,
-                    )
-                    .catch();
-                }}
-                onStartGame={() => {
-                  connection
-                    .send("ClearStats", gameOps.gameId)
-                    .then(() => {
-                      withConnection(async (c) => {
-                        await c
-                          .send(
-                            "StartGame",
-                            gameId,
-                            JSON.stringify(gameOps.gameMode),
-                          )
-                          .catch();
-                      }).catch();
-                    })
-                    .catch();
-                }}
+                onBackToMenu={exitLobby}
+                onStartGame={play}
                 players={gameOps.players}
                 gameId={gameOps.gameId}
                 currentPlayer={gameOps.currentPlayer}
@@ -128,19 +151,14 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 currentPlayer={gameOps.currentPlayer}
                 players={gameOps.players}
                 gameMode={gameOps.gameMode}
-                onBackToMenu={(players: Player[]) => {
-                  dispatch({ type: "exitLobby", players: players });
-                  setScreen("menu");
-
-                  connection
-                    .send(
-                      "RemovePlayer",
-                      gameOps.gameId,
-                      gameOps.currentPlayer.id,
-                    )
-                    .catch();
+                onBackToMenu={exitLobby}
+                onPlayAgain={() => {
+                  if (gameOps.players.length == 1) {
+                    play();
+                  } else {
+                    setScreen("lobby");
+                  }
                 }}
-                onPlayAgain={() => setScreen("lobby")}
                 dispatch={dispatch}
               />
             );

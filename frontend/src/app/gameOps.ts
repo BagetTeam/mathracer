@@ -50,6 +50,10 @@ export type GameOpsAction =
       type: "isComplete";
       playerId: number;
       hasComplete: boolean;
+    }
+  | {
+      type: "setGameId";
+      gameId: string;
     };
 
 export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -71,11 +75,9 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         players: action.players,
-        currentPlayer: {
-          ...state.currentPlayer,
-          isHost: action.players.find((p) => p.id === state.currentPlayer.id)!
-            .isHost,
-        },
+        currentPlayer:
+          action.players.find((p) => p.id === state.currentPlayer.id) ??
+          state.currentPlayer,
       };
     case "setGameMode":
       return {
@@ -90,10 +92,12 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
-        players: action.players,
+        players: [],
+        gameId: crypto.randomUUID().toString(),
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,
+          hasComplete: false,
         },
       };
 
@@ -158,6 +162,12 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
               }
             : p,
         ),
+      };
+
+    case "setGameId":
+      return {
+        ...state,
+        gameId: action.gameId,
       };
   }
 }

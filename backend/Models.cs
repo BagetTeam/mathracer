@@ -10,7 +10,7 @@ public class Player
     public bool isHost { get; set; }
     public string name { get; set; }
 
-    public bool hasComplete {get; set;}
+    public bool hasComplete { get; set; }
 
     public Player(string name)
     {
@@ -55,16 +55,19 @@ public class Game
     }
 }
 
-public class Lobby {
-    public Dictionary<int, Player> players {get; set;}
-    public GameMode gameMode {get; set;}
+public class Lobby
+{
+    public Dictionary<int, Player> players { get; set; }
+    public GameMode gameMode { get; set; }
 
-    public Lobby() {
+    public Lobby()
+    {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode();
     }
 
-    public Lobby(string mode, int count) {
+    public Lobby(string mode, int count)
+    {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode(mode, count);
     }

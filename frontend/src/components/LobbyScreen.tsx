@@ -7,7 +7,6 @@ import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
 import { GameOpsAction } from "@/app/gameOps";
 import { ConnectionContext } from "@/app/connectionContext";
-import { boolean } from "zod";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -102,13 +101,6 @@ function Lobby({
   const connection = use(ConnectionContext)!;
 
   useEffect(() => {
-    connection.on("SyncPlayers", (players: string) => {
-      dispatch({
-        type: "setPlayers",
-        players: JSON.parse(players),
-      });
-    });
-
     connection.on("SetGameMode", (mode: string) => {
       dispatch({
         type: "setGameMode",
@@ -132,8 +124,6 @@ function Lobby({
       });
     });
 
-    console.log(selectedMode);
-
     if (!currentPlayer.hasComplete) {
       connection
         .send(
@@ -147,14 +137,9 @@ function Lobby({
     }
 
     return () => {
-      connection.off("SyncPlayers");
       connection.off("AddUnloadEventListener");
     };
   }, []);
-  console.log(currentPlayer);
-
-  console.log({ currentPlayer });
-  console.log({ players });
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(gameUrl);

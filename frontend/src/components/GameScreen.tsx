@@ -45,18 +45,10 @@ function GameScreen({ gameOps, dispatch, onGameEnd }: Props) {
       setCountDown(count);
     });
 
-    connection.on("SyncPlayers", (players: string) => {
-      dispatch({
-        type: "setPlayers",
-        players: JSON.parse(players),
-      });
-    });
-
     connection.on("TimeElapsed", (time) => setTimeElapsed(time));
 
     return () => {
       connection.off("CountDown");
-      connection.off("SyncPlayers");
       connection.off("TimeElapsed");
     };
   }, []);
