@@ -23,7 +23,6 @@ export type GameOpsAction =
     }
   | {
       type: "exitLobby";
-      players: Player[];
     }
   | {
       type: "nameChange";
@@ -97,7 +96,6 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
         currentPlayer: {
           ...state.currentPlayer,
           isHost: false,
-          hasComplete: false,
         },
       };
 

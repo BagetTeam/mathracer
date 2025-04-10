@@ -43,7 +43,7 @@ public class RacerHub : Hub
             .Client(Context.ConnectionId)
             .SendAsync("AddUnloadEventListener", JsonSerializer.Serialize(currentPlayer));
 
-         await Clients
+        await Clients
             .Client(Context.ConnectionId)
             .SendAsync("SetGameMode", JsonSerializer.Serialize(gameMode));
 
@@ -83,7 +83,7 @@ public class RacerHub : Hub
 
         if (lobby.Count == 0)
         {
-            lobbies.Remove(gameId);
+            lobbies.Remove(gameId); 
             return;
         }
 
