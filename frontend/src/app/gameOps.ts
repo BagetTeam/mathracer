@@ -91,6 +91,7 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
+        equations: [],
         players: [],
         gameId: crypto.randomUUID().toString(),
         currentPlayer: {

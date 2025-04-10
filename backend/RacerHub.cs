@@ -7,13 +7,18 @@ namespace hub;
 
 public class RacerHub : Hub
 {
-    private static Dictionary<string, Lobby> lobbies =
-        new Dictionary<string, Lobby>();
+    private static Dictionary<string, Lobby> lobbies = new Dictionary<string, Lobby>();
 
     private async Task SyncPlayers(string gameId)
     {
-        Dictionary<int, Player> lobby = lobbies[gameId].players;
-        string json = JsonSerializer.Serialize(lobby.Values);
+        string json = "[]";
+
+        if (lobbies.ContainsKey(gameId))
+        {
+            Dictionary<int, Player> lobby = lobbies[gameId].players;
+            json = JsonSerializer.Serialize(lobby.Values);
+        }
+
         await Clients.Groups(gameId).SendAsync("SyncPlayers", json);
     }
 
@@ -51,18 +56,13 @@ public class RacerHub : Hub
         await SyncPlayers(gameId);
 
         System.Console.WriteLine(
-            "{0}",
+            "Join Lobby {0}",
             JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
         );
     }
 
     public async void RemovePlayer(string gameId, int id)
     {
-        System.Console.WriteLine(
-            "{0}",
-            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
-        );
-
         if (!lobbies.ContainsKey(gameId))
         {
             return;
@@ -70,10 +70,10 @@ public class RacerHub : Hub
 
         var lobby = lobbies[gameId].players;
 
-        if (!lobby.ContainsKey(id))
-        {
-            return;
-        }
+        /*if (!lobby.ContainsKey(id))*/
+        /*{*/
+        /*    return;*/
+        /*}*/
 
         Player p = lobby[id];
 
@@ -83,8 +83,7 @@ public class RacerHub : Hub
 
         if (lobby.Count == 0)
         {
-            lobbies.Remove(gameId); 
-            return;
+            lobbies.Remove(gameId);
         }
 
         if (p.isHost) {
@@ -93,17 +92,33 @@ public class RacerHub : Hub
         }
 
         await SyncPlayers(gameId);
+
+        System.Console.WriteLine(
+            "Remove Player {0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
     }
 
-    public async Task ClearStats(string gameId) {
+    public async Task ClearStats(string gameId)
+    {
+        System.Console.WriteLine(
+            "ClearStats {0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
+        /*if (!(lobbies.ContainsKey(gameId)))*/
+        /*{*/
+        /*    return;*/
+        /*}*/
+
         Dictionary<int, Player> players = lobbies[gameId].players;
-        
-        foreach (var player in players.Values) {
+
+        foreach (var player in players.Values)
+        {
             player.hasComplete = false;
             player.progress = 0;
             player.score = 0;
         }
-        
+
         await SyncPlayers(gameId);
     }
 
@@ -177,7 +192,8 @@ public class RacerHub : Hub
         );
     }
 
-    public async Task UpdatePlayerState(string gameId, int playerId, bool hasComplete) {
+    public async Task UpdatePlayerState(string gameId, int playerId, bool hasComplete)
+    {
         var lobby = lobbies[gameId].players;
         var player = lobby[playerId];
         player.hasComplete = hasComplete;

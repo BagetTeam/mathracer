@@ -135,7 +135,7 @@
 }
 
 .equation-card {
-  @apply flex items-center justify-center rounded-xl border border-gray-100 bg-white p-6 text-2xl font-medium shadow-sm transition-all duration-300;
+  @apply flex items-center justify-center rounded-xl border border-gray-100 bg-white p-4 text-2xl font-medium shadow-sm;
 }
 
 .player-card {
