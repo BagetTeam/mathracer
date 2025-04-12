@@ -99,7 +99,7 @@ function Lobby({
 }: LobbyProps) {
   const gameUrl = `http://localhost:3000?join=${gameId}`;
   const connection = use(ConnectionContext)!;
-
+  console.log(JSON.stringify(currentPlayer));
   useEffect(() => {
     connection.on("SetGameMode", (mode: string) => {
       dispatch({
@@ -125,6 +125,7 @@ function Lobby({
     });
 
     if (!currentPlayer.hasComplete) {
+      console.log(JSON.stringify(currentPlayer));
       connection
         .send(
           "JoinLobby",
@@ -134,14 +135,16 @@ function Lobby({
           selectedMode.count,
         )
         .catch();
+      console.log(JSON.stringify(players));
     }
-
+    console.log(JSON.stringify(players));
     return () => {
       connection.off("AddUnloadEventListener");
     };
   }, []);
 
   const copyInviteLink = () => {
+    console.log(JSON.stringify(players));
     navigator.clipboard.writeText(gameUrl);
     //toast.success("Invite link copied to clipboard");
   };

@@ -39,34 +39,89 @@ export default function Wrapper({ gameId, isJoining }: Props) {
   const connection = use(ConnectionContext)!;
   const router = useRouter();
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   console.log("CONNECTING AND SYNCING");
+  //   connection.on("StartCountdown", (req: string) => {
+  //     console.log("SETTING EQUATIONS???");
+  //     dispatch({ type: "setEquations", equations: JSON.parse(req) });
+  //     setScreen("playing");
+  //   });
+
+  //   connection.on("SyncPlayers", (players: string) => {
+  //     console.log("SYNCCC");
+  //     dispatch({
+  //       type: "setPlayers",
+  //       players: JSON.parse(players),
+  //     });
+  //   });
+
+  //   return () => {
+  //     console.log("BYEBYE");
+  //     connection.off("StartCountdown");
+  //     connection.off("SyncPlayers");
+  //   };
+  // }, []);
+  function setupSignalREventHandlers() {
     connection.on("StartCountdown", (req: string) => {
+      console.log("SETTING EQUATIONS???");
       dispatch({ type: "setEquations", equations: JSON.parse(req) });
       setScreen("playing");
     });
 
     connection.on("SyncPlayers", (players: string) => {
+      console.log("SYNCCC");
       dispatch({
         type: "setPlayers",
         players: JSON.parse(players),
       });
     });
 
+    connection.on("CountDown", (count) => {
+      console.log("Countdown:", count);
+    });
+
+    connection.on("GameStart", () => {
+      console.log("Game started!");
+    });
+
+    connection.on("TimeElapsed", (time) => {
+      console.log("Time elapsed:", time);
+    });
+  }
+
+  useEffect(() => {
+    setupSignalREventHandlers();
+
     return () => {
+      // Remove all handlers when component unmounts
       connection.off("StartCountdown");
       connection.off("SyncPlayers");
+      connection.off("CountDown");
+      connection.off("GameStart");
+      connection.off("TimeElapsed");
     };
   }, []);
 
   async function play() {
-    console.log("gameOps.gameId:", gameOps.gameId);
+    console.log("Lets play gameOps.gameId:", gameOps.gameId);
+
+    // if (gameOps.players.length === 0) {
+    //   await connection.send(
+    //     "JoinLobby",
+    //     gameOps.gameId,
+    //     gameOps.currentPlayer.name,
+    //     gameOps.gameMode.type,
+    //     gameOps.gameMode.count,
+    //   );
+    // }
 
     await connection
       .send("ClearStats", gameOps.gameId)
-      .then(() => {
-        withConnection(async (c) => {
+      .then(async () => {
+        console.log("STARTING GAME LES GOOOO");
+        await withConnection(async (c) => {
           await c
-            .send("StartGame", gameId, JSON.stringify(gameOps.gameMode))
+            .send("StartGame", gameOps.gameId, JSON.stringify(gameOps.gameMode))
             .catch();
         }).catch();
       })
@@ -77,17 +132,26 @@ export default function Wrapper({ gameId, isJoining }: Props) {
 
   async function exitLobby() {
     console.log("gameOps.gameId:", gameOps.gameId);
+    const currentGameId = gameOps.gameId;
 
-    await connection
-      .send("RemovePlayer", gameOps.gameId, gameOps.currentPlayer.id)
-      .then(() => dispatch({ type: "exitLobby" }))
-      .catch();
-    router.push("/");
+    try {
+      await connection.send(
+        "RemovePlayer",
+        currentGameId,
+        gameOps.currentPlayer.id,
+      );
 
-    dispatch({ type: "exitLobby" });
-    router.push("/");
-
-    setScreen("menu");
+      dispatch({ type: "exitLobby" });
+      router.push("/");
+      setScreen("menu");
+    } catch (error) {
+      console.error("Failed to exit lobby:", error);
+      dispatch({ type: "exitLobby" });
+      router.push("/");
+      setScreen("menu");
+    } finally {
+      console.log("NEW gameOps.gameId:", gameOps.gameId);
+    }
   }
 
   return (

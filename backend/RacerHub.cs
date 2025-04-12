@@ -65,15 +65,16 @@ public class RacerHub : Hub
     {
         if (!lobbies.ContainsKey(gameId))
         {
+            System.Console.WriteLine("NO GAME ID FOUND TO RENMOVE");
             return;
         }
 
         var lobby = lobbies[gameId].players;
 
-        /*if (!lobby.ContainsKey(id))*/
-        /*{*/
-        /*    return;*/
-        /*}*/
+        if (!lobby.ContainsKey(id))
+        {
+            return;
+        }
 
         Player p = lobby[id];
 
@@ -86,7 +87,7 @@ public class RacerHub : Hub
             lobbies.Remove(gameId);
         }
 
-        if (p.isHost) {
+        else if (p.isHost) {
             Player nextPlayer = lobby.First().Value;
             nextPlayer.isHost = true;
         }
@@ -105,10 +106,11 @@ public class RacerHub : Hub
             "ClearStats {0}",
             JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
         );
-        /*if (!(lobbies.ContainsKey(gameId)))*/
-        /*{*/
-        /*    return;*/
-        /*}*/
+        System.Console.WriteLine("Clearing Stat of gameID: " + gameId);
+        if (!lobbies.ContainsKey(gameId))
+        {
+            return;
+        }
 
         Dictionary<int, Player> players = lobbies[gameId].players;
 
@@ -120,10 +122,20 @@ public class RacerHub : Hub
         }
 
         await SyncPlayers(gameId);
+
+        System.Console.WriteLine(
+            "Cleared Stats {0}",
+            JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
     }
 
     public async Task StartGame(string gameId, string mode)
     {
+        System.Console.WriteLine("STARTING GAME RIGHT NOW -- GENERATING EQUATIONS");
+        System.Console.WriteLine(
+            "Start Game {0}",
+            JsonSerializer.Serialize(lobbies[gameId], new JsonSerializerOptions { WriteIndented = true })
+        );
         GameMode selectedMode = JsonSerializer.Deserialize<GameMode>(mode)!;
         Equation[] equations = Equation.GenerateAllEquations(
             selectedMode.count * (selectedMode.type == "time" ? 10 : 1)

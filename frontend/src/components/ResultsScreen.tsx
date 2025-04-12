@@ -11,7 +11,7 @@ interface ResultsScreenProps {
   players: Player[];
   gameMode: GameMode;
   onPlayAgain: () => void;
-  onBackToMenu: (players: Player[]) => void;
+  onBackToMenu: () => void;
   currentPlayer: Player;
   dispatch: ActionDispatch<[action: GameOpsAction]>;
 }
@@ -112,7 +112,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         </Button>
 
         <Button
-          onClick={() => onBackToMenu(players)}
+          onClick={onBackToMenu}
           variant="outline"
           className="flex flex-1 items-center justify-center gap-2"
         >

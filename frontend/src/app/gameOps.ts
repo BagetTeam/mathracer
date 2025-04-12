@@ -91,12 +91,15 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
     case "exitLobby":
       return {
         ...state,
+        gameMode: { type: "time", count: 10 },
         equations: [],
         players: [],
         gameId: crypto.randomUUID().toString(),
         currentPlayer: {
           ...state.currentPlayer,
+          id: 1,
           isHost: false,
+          hasComplete: false,
         },
       };
 
