@@ -99,6 +99,11 @@ const MainMenu: React.FC<MainMenuProps> = ({
           />
         </div>
       </div>
+
+      <div className="w-full">
+        <h2 className="mb-4 text-xl font-semibold">Join Public Lobbies</h2>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6"></div>
+      </div>
     </div>
   );
 };
