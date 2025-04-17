@@ -60,15 +60,19 @@ public class Lobby
     public Dictionary<int, Player> players { get; set; }
     public GameMode gameMode { get; set; }
 
+    public bool isPublic {get; set;}
+
     public Lobby()
     {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode();
+        isPublic = false;
     }
 
     public Lobby(string mode, int count)
     {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode(mode, count);
+        isPublic = false;
     }
 }

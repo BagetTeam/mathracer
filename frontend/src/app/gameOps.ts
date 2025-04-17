@@ -6,6 +6,7 @@ export type GameOps = {
   gameMode: GameMode;
   gameId: string;
   equations: Equation[];
+  isPublic: boolean;
 };
 
 export type GameOpsAction =
@@ -53,6 +54,10 @@ export type GameOpsAction =
   | {
       type: "setGameId";
       gameId: string;
+    }
+  | {
+      type: "changePublic";
+      isPublic: boolean;
     };
 
 export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -170,6 +175,12 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         gameId: action.gameId,
+      };
+
+    case "changePublic":
+      return {
+        ...state,
+        isPublic: action.isPublic,
       };
   }
 }

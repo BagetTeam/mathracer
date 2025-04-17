@@ -217,4 +217,15 @@ public class RacerHub : Hub
             JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
         );
     }
+
+    public async Task ChangePublic(string gameId) {
+        lobbies[gameId].isPublic = !lobbies[gameId].isPublic;
+
+        await Clients.Groups(gameId).SendAsync("ChangePublic", lobbies[gameId].isPublic);
+
+        // System.Console.WriteLine(
+        //     "ChangePublic {0}",
+        //     JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
+        // );
+    }
 }

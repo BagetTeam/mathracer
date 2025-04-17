@@ -20,5 +20,5 @@ export type GameState = "menu" | "joining" | "lobby" | "playing" | "results";
 export interface Game {
   id: string;
   gameMode: GameMode;
-  questions: Equation;
+  equations: Equation;
 }

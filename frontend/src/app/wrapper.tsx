@@ -34,6 +34,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
     players: [],
     gameMode: { type: "time", count: 10 },
     equations: [],
+    isPublic: false,
   });
 
   const connection = use(ConnectionContext)!;
@@ -86,6 +87,13 @@ export default function Wrapper({ gameId, isJoining }: Props) {
 
     connection.on("TimeElapsed", (time) => {
       console.log("Time elapsed:", time);
+    });
+
+    connection.on("ChangePublic", (isPublic) => {
+      dispatch({
+        type: "changePublic",
+        isPublic: isPublic,
+      });
     });
   }
 
@@ -202,6 +210,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                 gameId={gameOps.gameId}
                 currentPlayer={gameOps.currentPlayer}
                 selectedMode={gameOps.gameMode}
+                isPublic={gameOps.isPublic}
               />
             );
           case "playing":
