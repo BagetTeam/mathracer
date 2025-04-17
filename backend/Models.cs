@@ -41,17 +41,19 @@ public class GameMode
     }
 }
 
-public class Game
+public class PublicGame
 {
     public string id { get; set; }
+    public string hostName { get; set; }
+    public int numPlayers {get; set; }
     public GameMode gameMode { get; set; }
-    public Equation[] equations { get; set; }
 
-    public Game(string id, Equation[] eq, GameMode gameMode)
+    public PublicGame(string id,  string hostName, int numPlayers, GameMode gameMode)
     {
         this.id = id;
         this.gameMode = gameMode;
-        this.equations = eq;
+        this.hostName = hostName;
+        this.numPlayers = numPlayers;
     }
 }
 

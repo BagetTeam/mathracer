@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text.Json;
 using equation;
 using Microsoft.AspNetCore.SignalR;
@@ -8,6 +9,7 @@ namespace hub;
 public class RacerHub : Hub
 {
     private static Dictionary<string, Lobby> lobbies = new Dictionary<string, Lobby>();
+    private static List<PublicGame> publicLobbies = new List<PublicGame>();
 
     private async Task SyncPlayers(string gameId)
     {
@@ -222,6 +224,22 @@ public class RacerHub : Hub
         lobbies[gameId].isPublic = !lobbies[gameId].isPublic;
 
         await Clients.Groups(gameId).SendAsync("ChangePublic", lobbies[gameId].isPublic);
+
+        if (lobbies[gameId].isPublic) {
+            string hostName;
+            if (lobbies[gameId].players.First().Value.isHost) {
+                hostName = lobbies[gameId].players.First().Value.name;
+            }
+            else {
+                var e = lobbies[gameId].players.GetEnumerator();
+                e.MoveNext();
+                while (!e.Current.Value.isHost) {
+                    e.MoveNext();
+                }
+                hostName = e.Current.Value.name;
+            }
+            publicLobbies.Add(new PublicGame(gameId, hostName, lobbies[gameId].players.Count, lobbies[gameId].gameMode));
+        }
 
         // System.Console.WriteLine(
         //     "ChangePublic {0}",
