@@ -51,9 +51,9 @@ public class PublicGame
     public PublicGame(string id,  string hostName, int numPlayers, GameMode gameMode)
     {
         this.id = id;
-        this.gameMode = gameMode;
         this.hostName = hostName;
         this.numPlayers = numPlayers;
+        this.gameMode = gameMode;
     }
 }
 

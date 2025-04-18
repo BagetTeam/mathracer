@@ -1,4 +1,4 @@
-import { Equation, GameMode, Player } from "@/types/game";
+import { Equation, GameMode, Player, PublicLobby } from "@/types/game";
 
 export type GameOps = {
   currentPlayer: Player;
@@ -7,6 +7,7 @@ export type GameOps = {
   gameId: string;
   equations: Equation[];
   isPublic: boolean;
+  publicLobbies: PublicLobby[];
 };
 
 export type GameOpsAction =
@@ -58,6 +59,10 @@ export type GameOpsAction =
   | {
       type: "changePublic";
       isPublic: boolean;
+    }
+  | {
+      type: "setPublicLobbies";
+      publicLobbies: PublicLobby[];
     };
 
 export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
@@ -181,6 +186,11 @@ export function gameOpsreducer(state: GameOps, action: GameOpsAction): GameOps {
       return {
         ...state,
         isPublic: action.isPublic,
+      };
+    case "setPublicLobbies":
+      return {
+        ...state,
+        publicLobbies: action.publicLobbies,
       };
   }
 }

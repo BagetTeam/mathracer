@@ -211,28 +211,29 @@ function Lobby({
           {getModeDescription()}
         </p>
       </div>
-
-      <div className="bg-secondary/30 border-secondary w-full rounded-lg border p-4">
-        <div className="flex flex-col items-start pb-2">
-          <div className="text-[15px] text-gray-800">Game Settings</div>
-          <div className="text-xs text-gray-500">
-            Only the host can modify these settings
-          </div>
-        </div>
-        <div className="flex flex-row items-center justify-between gap-3">
-          <div className="flex flex-col items-start">
-            <div className="text-[15px] text-gray-800">Public Lobby</div>
+      {currentPlayer.isHost && (
+        <div className="bg-secondary/30 border-secondary w-full rounded-lg border p-4">
+          <div className="flex flex-col items-start pb-2">
+            <div className="text-[15px] text-gray-800">Game Settings</div>
             <div className="text-xs text-gray-500">
-              Allow anyone to join without an invite
+              Only the host can modify these settings
             </div>
           </div>
-          <Switch
-            checked={currentIsPublic}
-            onCheckedChange={changePublicPrivate}
-            className="data-[state=checked]:bg-primary"
-          ></Switch>
+          <div className="flex flex-row items-center justify-between gap-3">
+            <div className="flex flex-col items-start">
+              <div className="text-[15px] text-gray-800">Public Lobby</div>
+              <div className="text-xs text-gray-500">
+                Allow anyone to join without an invite
+              </div>
+            </div>
+            <Switch
+              checked={isPublic}
+              onCheckedChange={changePublicPrivate}
+              className="data-[state=checked]:bg-primary"
+            ></Switch>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-secondary/30 border-secondary w-full rounded-lg border p-4">
         <div className="mb-2 flex flex-col items-center justify-between gap-3 md:flex-row">

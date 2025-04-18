@@ -1,16 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { use, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, Users, Timer, PlusCircle, User } from "lucide-react";
 import GameModeCard from "./GameModeCard";
-import { GameMode } from "@/types/game";
+import { GameMode, PublicLobby } from "@/types/game";
+import { ConnectionContext } from "@/app/connectionContext";
+import PublicLobbyCard from "./PublicLobbyCard";
 
 interface MainMenuProps {
   onSelectMode: (mode: GameMode) => void;
   onCreateGame: () => void;
   onJoinGame: () => void;
   onStartSinglePlayer: () => void;
+  publicLobbies: PublicLobby[];
 }
 
 const MainMenu: React.FC<MainMenuProps> = ({
@@ -18,7 +21,13 @@ const MainMenu: React.FC<MainMenuProps> = ({
   onCreateGame,
   onJoinGame,
   onStartSinglePlayer,
+  publicLobbies,
 }) => {
+  const connection = use(ConnectionContext)!;
+  useEffect(() => {
+    connection.send("SyncPublicLobbies").catch();
+    console.log("Syncing public lobbies");
+  }, []);
   return (
     <div className="animate-fade-in mx-auto flex max-w-3xl flex-col items-center space-y-8">
       <div className="w-full space-y-3 text-center">
@@ -102,7 +111,21 @@ const MainMenu: React.FC<MainMenuProps> = ({
 
       <div className="w-full">
         <h2 className="mb-4 text-xl font-semibold">Join Public Lobbies</h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6"></div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6">
+          {publicLobbies.length > 0 ? (
+            publicLobbies.map((lobby) => (
+              <PublicLobbyCard
+                key={lobby.id}
+                gameId={lobby.id}
+                hostName={lobby.hostName}
+                numPlayers={lobby.numPlayers}
+                gameMode={lobby.gameMode}
+              />
+            ))
+          ) : (
+            <div>No public lobbies....</div>
+          )}
+        </div>
       </div>
     </div>
   );

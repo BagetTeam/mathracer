@@ -9,7 +9,7 @@ namespace hub;
 public class RacerHub : Hub
 {
     private static Dictionary<string, Lobby> lobbies = new Dictionary<string, Lobby>();
-    private static List<PublicGame> publicLobbies = new List<PublicGame>();
+    private static Dictionary<string, PublicGame> publicLobbies = new Dictionary<string, PublicGame>();
 
     private async Task SyncPlayers(string gameId)
     {
@@ -238,12 +238,20 @@ public class RacerHub : Hub
                 }
                 hostName = e.Current.Value.name;
             }
-            publicLobbies.Add(new PublicGame(gameId, hostName, lobbies[gameId].players.Count, lobbies[gameId].gameMode));
+            publicLobbies.Add(gameId, new PublicGame(gameId, hostName, lobbies[gameId].players.Count, lobbies[gameId].gameMode));
+        }
+        else {
+            publicLobbies.Remove(gameId);
         }
 
-        // System.Console.WriteLine(
-        //     "ChangePublic {0}",
-        //     JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
-        // );
+        System.Console.WriteLine(
+            "ChangePublic {0}",
+            JsonSerializer.Serialize(publicLobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
+    }
+    public async Task SyncPublicLobbies() {
+        string json = JsonSerializer.Serialize(publicLobbies.Values);
+
+        await Clients.Client(Context.ConnectionId).SendAsync("SyncPublicLobbies", json);
     }
 }

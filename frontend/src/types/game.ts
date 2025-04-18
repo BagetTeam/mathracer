@@ -22,3 +22,10 @@ export interface Game {
   gameMode: GameMode;
   equations: Equation;
 }
+
+export interface PublicLobby {
+  id: string;
+  hostName: string;
+  numPlayers: number;
+  gameMode: GameMode;
+}

@@ -35,6 +35,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
     gameMode: { type: "time", count: 10 },
     equations: [],
     isPublic: false,
+    publicLobbies: [],
   });
 
   const connection = use(ConnectionContext)!;
@@ -95,6 +96,13 @@ export default function Wrapper({ gameId, isJoining }: Props) {
         isPublic: isPublic,
       });
     });
+
+    connection.on("SyncPublicLobbies", (publicLobbies) => {
+      dispatch({
+        type: "setPublicLobbies",
+        publicLobbies: JSON.parse(publicLobbies),
+      });
+    });
   }
 
   useEffect(() => {
@@ -107,6 +115,8 @@ export default function Wrapper({ gameId, isJoining }: Props) {
       connection.off("CountDown");
       connection.off("GameStart");
       connection.off("TimeElapsed");
+      connection.off("ChangePublic");
+      connection.off("SyncPublicLobbies");
     };
   }, []);
 
@@ -188,6 +198,7 @@ export default function Wrapper({ gameId, isJoining }: Props) {
                     .then(async () => await play())
                     .catch();
                 }}
+                publicLobbies={gameOps.publicLobbies}
               />
             );
           case "joining":
