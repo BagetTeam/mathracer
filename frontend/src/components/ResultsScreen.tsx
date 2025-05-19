@@ -1,10 +1,8 @@
-import React, { ActionDispatch, use, useEffect } from "react";
+import React, { ActionDispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, RotateCcw, Home } from "lucide-react";
 import { Player, GameMode } from "@/types/game";
 import PlayerList from "./PlayerList";
-import { connection } from "next/server";
-import { ConnectionContext } from "@/app/connectionContext";
 import { GameOpsAction } from "@/app/gameOps";
 
 interface ResultsScreenProps {
@@ -22,7 +20,6 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   onPlayAgain,
   onBackToMenu,
   currentPlayer,
-  dispatch,
 }) => {
   // Get the winner(s) - could be multiple in case of tie
   const highestScore =

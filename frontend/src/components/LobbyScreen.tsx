@@ -150,7 +150,7 @@ function Lobby({
   }, []);
 
   const changePublicPrivate = async () => {
-    var newState = !currentIsPublic;
+    const newState = !currentIsPublic;
     setIsPublic(newState);
     try {
       await connection.send("ChangePublic", gameId);

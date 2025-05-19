@@ -1,6 +1,5 @@
 import { GameMode } from "@/types/game";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
 import { Trophy, Timer, Users } from "lucide-react";
 
 type PublicLobbyCardProp = {
