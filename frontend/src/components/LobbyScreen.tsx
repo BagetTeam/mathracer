@@ -7,6 +7,7 @@ import PlayerList from "./PlayerList";
 import { Player, GameMode } from "@/types/game";
 import { GameOpsAction } from "@/app/gameOps";
 import { ConnectionContext } from "@/app/connectionContext";
+import { Switch } from "@/components/ui/switch";
 
 type LobbyScreenProps = LobbyProps;
 
@@ -18,6 +19,7 @@ function LobbyScreen({
   onStartGame,
   onBackToMenu,
   dispatch,
+  isPublic,
 }: LobbyScreenProps) {
   const [showNameDialogue, setShowNameDialogue] = useState(true);
 
@@ -37,6 +39,7 @@ function LobbyScreen({
           onStartGame={onStartGame}
           onBackToMenu={onBackToMenu}
           dispatch={dispatch}
+          isPublic={isPublic}
         />
       )}
     </div>
@@ -87,6 +90,7 @@ type LobbyProps = {
   onStartGame: () => void;
   onBackToMenu: (players: Player[]) => void;
   dispatch: ActionDispatch<[action: GameOpsAction]>;
+  isPublic: boolean;
 };
 function Lobby({
   gameId,
@@ -96,10 +100,12 @@ function Lobby({
   currentPlayer,
   onStartGame,
   dispatch,
+  isPublic,
 }: LobbyProps) {
   const gameUrl = `http://localhost:3000?join=${gameId}`;
   const connection = use(ConnectionContext)!;
-  console.log(JSON.stringify(currentPlayer));
+  const [currentIsPublic, setIsPublic] = useState(isPublic);
+
   useEffect(() => {
     connection.on("SetGameMode", (mode: string) => {
       dispatch({
@@ -142,6 +148,16 @@ function Lobby({
       connection.off("AddUnloadEventListener");
     };
   }, []);
+
+  const changePublicPrivate = async () => {
+    const newState = !currentIsPublic;
+    setIsPublic(newState);
+    try {
+      await connection.send("ChangePublic", gameId);
+    } catch {
+      setIsPublic(!newState);
+    }
+  };
 
   const copyInviteLink = () => {
     console.log(JSON.stringify(players));
@@ -195,6 +211,29 @@ function Lobby({
           {getModeDescription()}
         </p>
       </div>
+      {currentPlayer.isHost && (
+        <div className="bg-secondary/30 border-secondary w-full rounded-lg border p-4">
+          <div className="flex flex-col items-start pb-2">
+            <div className="text-[15px] text-gray-800">Game Settings</div>
+            <div className="text-xs text-gray-500">
+              Only the host can modify these settings
+            </div>
+          </div>
+          <div className="flex flex-row items-center justify-between gap-3">
+            <div className="flex flex-col items-start">
+              <div className="text-[15px] text-gray-800">Public Lobby</div>
+              <div className="text-xs text-gray-500">
+                Allow anyone to join without an invite
+              </div>
+            </div>
+            <Switch
+              checked={isPublic}
+              onCheckedChange={changePublicPrivate}
+              className="data-[state=checked]:bg-primary"
+            ></Switch>
+          </div>
+        </div>
+      )}
 
       <div className="bg-secondary/30 border-secondary w-full rounded-lg border p-4">
         <div className="mb-2 flex flex-col items-center justify-between gap-3 md:flex-row">

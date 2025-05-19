@@ -41,17 +41,19 @@ public class GameMode
     }
 }
 
-public class Game
+public class PublicGame
 {
     public string id { get; set; }
+    public string hostName { get; set; }
+    public int numPlayers {get; set; }
     public GameMode gameMode { get; set; }
-    public Equation[] equations { get; set; }
 
-    public Game(string id, Equation[] eq, GameMode gameMode)
+    public PublicGame(string id,  string hostName, int numPlayers, GameMode gameMode)
     {
         this.id = id;
+        this.hostName = hostName;
+        this.numPlayers = numPlayers;
         this.gameMode = gameMode;
-        this.equations = eq;
     }
 }
 
@@ -60,15 +62,19 @@ public class Lobby
     public Dictionary<int, Player> players { get; set; }
     public GameMode gameMode { get; set; }
 
+    public bool isPublic {get; set;}
+
     public Lobby()
     {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode();
+        isPublic = false;
     }
 
     public Lobby(string mode, int count)
     {
         players = new Dictionary<int, Player>();
         gameMode = new GameMode(mode, count);
+        isPublic = false;
     }
 }

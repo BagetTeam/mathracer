@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text.Json;
 using equation;
 using Microsoft.AspNetCore.SignalR;
@@ -8,6 +9,7 @@ namespace hub;
 public class RacerHub : Hub
 {
     private static Dictionary<string, Lobby> lobbies = new Dictionary<string, Lobby>();
+    private static Dictionary<string, PublicGame> publicLobbies = new Dictionary<string, PublicGame>();
 
     private async Task SyncPlayers(string gameId)
     {
@@ -216,5 +218,40 @@ public class RacerHub : Hub
             "UpdateState {0}",
             JsonSerializer.Serialize(lobbies, new JsonSerializerOptions { WriteIndented = true })
         );
+    }
+
+    public async Task ChangePublic(string gameId) {
+        lobbies[gameId].isPublic = !lobbies[gameId].isPublic;
+
+        await Clients.Groups(gameId).SendAsync("ChangePublic", lobbies[gameId].isPublic);
+
+        if (lobbies[gameId].isPublic) {
+            string hostName;
+            if (lobbies[gameId].players.First().Value.isHost) {
+                hostName = lobbies[gameId].players.First().Value.name;
+            }
+            else {
+                var e = lobbies[gameId].players.GetEnumerator();
+                e.MoveNext();
+                while (!e.Current.Value.isHost) {
+                    e.MoveNext();
+                }
+                hostName = e.Current.Value.name;
+            }
+            publicLobbies.Add(gameId, new PublicGame(gameId, hostName, lobbies[gameId].players.Count, lobbies[gameId].gameMode));
+        }
+        else {
+            publicLobbies.Remove(gameId);
+        }
+
+        System.Console.WriteLine(
+            "ChangePublic {0}",
+            JsonSerializer.Serialize(publicLobbies, new JsonSerializerOptions { WriteIndented = true })
+        );
+    }
+    public async Task SyncPublicLobbies() {
+        string json = JsonSerializer.Serialize(publicLobbies.Values);
+
+        await Clients.Client(Context.ConnectionId).SendAsync("SyncPublicLobbies", json);
     }
 }

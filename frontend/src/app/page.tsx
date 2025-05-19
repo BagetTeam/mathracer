@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ConnectionContext } from "./connectionContext";
 import Wrapper from "./wrapper";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { useSearchParams } from "next/navigation";
 
-export default function Page() {
+function LoadingState() {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      Loading...
+    </div>
+  );
+}
+
+function GameComponent() {
   const searchParams = useSearchParams();
   const isJoining = searchParams.get("join") ? true : false;
   const gameId = searchParams.get("join") ?? crypto.randomUUID().toString();
@@ -32,5 +40,14 @@ export default function Page() {
     <ConnectionContext.Provider value={conn}>
       <Wrapper gameId={gameId} isJoining={isJoining} />
     </ConnectionContext.Provider>
+  );
+}
+
+// Page component with proper suspense boundary
+export default function Page() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <GameComponent />
+    </Suspense>
   );
 }

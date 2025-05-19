@@ -16,7 +16,6 @@ import EquationStack from "./EquationStack";
 import { GameOps, GameOpsAction } from "@/app/gameOps";
 import { Progress } from "./ui/progress";
 import { ConnectionContext } from "@/app/connectionContext";
-import { GameMode } from "@/types/game";
 
 interface Props {
   gameOps: GameOps;
