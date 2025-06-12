@@ -2,7 +2,9 @@ import * as signalR from "@microsoft/signalr";
 
 export async function newConnection() {
   const c = new signalR.HubConnectionBuilder()
-    .withUrl("https://mathracer.onrender.com/hub")
+    .withUrl("https://mathracer.onrender.com/hub", {
+      withCredentials: true,
+    })
     .build();
 
   await c.start();
@@ -13,7 +15,9 @@ export async function withConnection(
   f: (arg: signalR.HubConnection) => Promise<void>,
 ) {
   const c = new signalR.HubConnectionBuilder()
-    .withUrl("https://mathracer.onrender.com/hub")
+    .withUrl("https://mathracer.onrender.com/hub", {
+      withCredentials: true,
+    })
     .build();
 
   await c.start();
