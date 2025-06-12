@@ -23,7 +23,7 @@ function GameComponent() {
 
   useEffect(() => {
     const connection = new HubConnectionBuilder()
-      .withUrl("https://mathracer.onrender.com")
+      .withUrl("https://mathracer.onrender.com/hub")
       .build();
 
     connection
