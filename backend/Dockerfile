@@ -4,12 +4,12 @@ WORKDIR /app
 # Copy everything and restore
 COPY . ./
 RUN dotnet restore
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o /out
 
 # Use the ASP.NET runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/out ./
+COPY --from=build /out ./
 
 # Set environment variable for Render's dynamic port
 ENV ASPNETCORE_URLS=http://+:10000
@@ -18,4 +18,4 @@ ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
 
 # Run the app
-ENTRYPOINT ["dotnet", "typeracer.csproj"]
+ENTRYPOINT ["dotnet", "typeracer.dll"]
