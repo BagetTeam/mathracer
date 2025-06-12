@@ -15,7 +15,7 @@ export default function PublicLobbyCard({
   numPlayers,
   gameMode,
 }: PublicLobbyCardProp) {
-  const gameUrl = `http://localhost:3000?join=${gameId}`;
+  const gameUrl = `https://mathracer-phi.vercel.app?join=${gameId}`;
 
   const handleJoin = () => {
     window.location.href = gameUrl;

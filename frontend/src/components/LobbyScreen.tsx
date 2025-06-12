@@ -102,7 +102,7 @@ function Lobby({
   dispatch,
   isPublic,
 }: LobbyProps) {
-  const gameUrl = `http://localhost:3000?join=${gameId}`;
+  const gameUrl = `https://mathracer-phi.vercel.app?join=${gameId}`;
   const connection = use(ConnectionContext)!;
   const [currentIsPublic, setIsPublic] = useState(isPublic);
 
